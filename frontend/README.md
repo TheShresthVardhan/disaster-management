@@ -64,6 +64,14 @@ src/
 - 112 call button (tel:112)
 - Works offline (queued locally)
 
+### Incident AI Integration (Phase 5A)
+The frontend is designed to integrate with the backend Incident AI Foundation:
+- `IncidentInput` schema matches the Report Disaster form data
+- `IncidentAIResult` schema compatible with Firestore incident objects
+- Image URLs from Firebase Storage passed to AI for analysis
+- AI results can be attached to incidents for display on Dashboard/Map/Alerts
+- Demo provider returns `is_demo: true` - UI can show appropriate badges
+
 ## Environment Variables
 Copy `.env.example` to `.env` and fill in Firebase config:
 ```env
@@ -81,7 +89,7 @@ VITE_FIREBASE_APP_ID=...
 | `npm run dev` | Start dev server |
 | `npm run build` | Production build |
 | `npm run lint` | Oxlint |
-| `npm run preview` | Preview build |
+| `npm run preview` | Preview production build |
 
 ## Verification
 ```bash
@@ -92,8 +100,28 @@ npm run build  # Passes (~622 kB JS gzipped)
 ## Firebase Rules (DEVELOPMENT ONLY)
 See root `storage.rules` and `firestore.rules` - **not for production**.
 
-## Future Phases
-- Phase 5: AI risk analysis, community network, recovery tracking
-- Interactive map with clustering
-- Push notifications
-- Authentication
+## Phase 5A - Incident AI Foundation (Backend)
+The AI foundation lives in `backend/app/ai/`:
+
+### Schemas
+- `IncidentInput` - Matches report form data (description, location, severity, image URL, etc.)
+- `IncidentAIResult` - Structured AI assessment (type, severity, confidence, impact, safety, actions)
+
+### Provider Architecture
+- `IncidentAIProvider` - Abstract base for pluggable models
+- `DemoIncidentAIProvider` - Rule-based mock (clearly labeled `is_demo: true`)
+- `ProviderRegistry` - Dynamic provider selection
+
+### Validation (Unit-Testable)
+- Input validation (description, coordinates, affected people, image URL)
+- Severity normalization & comparison
+- Disaster type normalization
+- AI result schema validation
+- Confidence validation & interpretation
+
+### Future Frontend Integration (Phase 5B+)
+- AI analysis trigger on incident submission
+- Display AI predictions on Dashboard/Map/Alerts
+- Confidence badges and demo indicators
+- Image analysis results display
+- Confidence calibration visualization
