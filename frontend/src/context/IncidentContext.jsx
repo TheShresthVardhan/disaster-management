@@ -1,4 +1,10 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { 
+  fetchIncidents, 
+  createIncident, 
+  subscribeToIncidents, 
+  isFirestoreAvailable 
+} from '../services/firestore';
 
 const IncidentContext = createContext(null);
 
@@ -44,46 +50,169 @@ const INITIAL_MOCK_INCIDENTS = [
   },
 ];
 
+const STORAGE_KEY = 'disaster-intel-incidents';
+const DEMO_INCIDENT_IDS = ['INC-DEMO-001', 'INC-DEMO-002', 'INC-DEMO-003'];
+
+// Helper functions (defined at module level)
+function isDemoIncident(incident) {
+  return DEMO_INCIDENT_IDS.includes(incident.incidentId);
+}
+
 function generateIncidentId() {
   const timestamp = Date.now().toString(36).toUpperCase();
   const random = Math.random().toString(36).substring(2, 6).toUpperCase();
   return `INC-${timestamp}-${random}`;
 }
 
-export function IncidentProvider({ children }) {
-  const [incidents, setIncidents] = useState(() => {
-    const stored = localStorage.getItem('disaster-intel-incidents');
+function loadFromLocalStorage() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch {
-        return INITIAL_MOCK_INCIDENTS;
-      }
+      return JSON.parse(stored);
     }
-    return INITIAL_MOCK_INCIDENTS;
-  });
+  } catch (error) {
+    console.warn('[IncidentContext] Failed to load from localStorage:', error);
+  }
+  return INITIAL_MOCK_INCIDENTS;
+}
+
+function saveToLocalStorage(incidents) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(incidents));
+  } catch (error) {
+    console.warn('[IncidentContext] Failed to save to localStorage:', error);
+  }
+}
+
+export function IncidentProvider({ children }) {
+  const [incidents, setIncidents] = useState(() => loadFromLocalStorage());
+  const [firestoreReady, setFirestoreReady] = useState(false);
+  const [firestoreError, setFirestoreError] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('disaster-intel-incidents', JSON.stringify(incidents));
+    saveToLocalStorage(incidents);
   }, [incidents]);
 
-  const addIncident = useCallback((incidentData) => {
+  // Firestore status update function - defined outside to avoid circular dependency
+  const updateIncidentStatusFirestore = useCallback(async (incidentId, status) => {
+    try {
+      const { updateIncidentStatus } = await import('../services/firestore');
+      await updateIncidentStatus(incidentId, status);
+    } catch (error) {
+      console.warn('[IncidentContext] Failed to sync status to Firestore:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    saveToLocalStorage(incidents);
+  }, [incidents]);
+
+  useEffect(() => {
+    if (!isFirestoreAvailable()) {
+      console.log('[IncidentContext] Firestore not available, using localStorage only');
+      setFirestoreReady(true);
+      return;
+    }
+
+    let unsubscribe = () => {};
+
+    const initFirestore = async () => {
+      try {
+        setIsSyncing(true);
+        console.log('[IncidentContext] Initializing Firestore connection...');
+        
+        const firestoreIncidents = await fetchIncidents();
+        
+        const localOnly = incidents.filter(inc => 
+          isDemoIncident(inc) || 
+          !firestoreIncidents.some(fi => fi.incidentId === inc.incidentId)
+        );
+
+        const merged = [...firestoreIncidents];
+        localOnly.forEach(localInc => {
+          if (!merged.some(m => m.incidentId === localInc.incidentId)) {
+            merged.push(localInc);
+          }
+        });
+
+        setIncidents(merged);
+        console.log('[IncidentContext] Initial Firestore sync complete. Total incidents:', merged.length);
+
+        unsubscribe = subscribeToIncidents((firestoreData) => {
+          const localOnly = incidents.filter(inc => 
+            isDemoIncident(inc) || 
+            !firestoreData.some(fi => fi.incidentId === inc.incidentId)
+          );
+          
+          const merged = [...firestoreData];
+          localOnly.forEach(localInc => {
+            if (!merged.some(m => m.incidentId === localInc.incidentId)) {
+              merged.push(localInc);
+            }
+          });
+          
+          setIncidents(merged);
+          console.log('[IncidentContext] Real-time Firestore update received');
+        });
+
+        setFirestoreReady(true);
+        setFirestoreError(null);
+      } catch (error) {
+        console.error('[IncidentContext] Firestore initialization failed:', error);
+        setFirestoreError(error.message);
+        setFirestoreReady(true);
+      } finally {
+        setIsSyncing(false);
+      }
+    };
+
+    initFirestore();
+
+    return () => {
+      unsubscribe();
+    };
+  }, [incidents]);
+
+  const addIncident = useCallback(async (incidentData) => {
     const newIncident = {
       incidentId: generateIncidentId(),
-      source: 'Citizen Report',
+      source: incidentData.source || 'Citizen Report',
       timestamp: new Date().toISOString(),
       status: 'ACTIVE',
       ...incidentData,
     };
+
     setIncidents((prev) => [newIncident, ...prev]);
+
+    if (isFirestoreAvailable() && !isDemoIncident(newIncident)) {
+      try {
+        console.log('[IncidentContext] Syncing new incident to Firestore...');
+        await createIncident(newIncident);
+        console.log('[IncidentContext] Incident synced to Firestore:', newIncident.incidentId);
+      } catch (error) {
+        console.warn('[IncidentContext] Firestore sync failed, incident stored locally only:', error);
+      }
+    } else if (!isFirestoreAvailable()) {
+      console.log('[IncidentContext] Firestore unavailable, incident stored locally only');
+    }
+
     return newIncident;
   }, []);
 
-  const updateIncidentStatus = useCallback((incidentId, status) => {
+  const updateIncidentStatus = useCallback(async (incidentId, status) => {
     setIncidents((prev) =>
       prev.map((inc) => (inc.incidentId === incidentId ? { ...inc, status } : inc))
     );
-  }, []);
+
+    if (isFirestoreAvailable()) {
+      try {
+        await updateIncidentStatusFirestore(incidentId, status);
+      } catch (error) {
+        console.warn('[IncidentContext] Failed to sync status to Firestore:', error);
+      }
+    }
+  }, [updateIncidentStatusFirestore]);
 
   const getActiveIncidents = useCallback(() => {
     return incidents.filter((inc) => inc.status === 'ACTIVE');
@@ -105,6 +234,10 @@ export function IncidentProvider({ children }) {
     getActiveIncidents,
     getIncidentsByType,
     getIncidentsBySeverity,
+    firestoreReady,
+    firestoreError,
+    isSyncing,
+    isFirestoreOnline: isFirestoreAvailable(),
   };
 
   return <IncidentContext.Provider value={value}>{children}</IncidentContext.Provider>;
