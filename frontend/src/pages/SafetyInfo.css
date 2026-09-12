@@ -1,0 +1,250 @@
+.page.safety-page {
+  padding: 0;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+.safety-sidebar {
+  max-height: calc(100vh - 120px);
+}
+
+.safety-category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.safety-category-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: none;
+  background: transparent;
+  border-radius: 0.5rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--bs-body-color);
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.safety-category-item:hover {
+  background-color: var(--bs-gray-100);
+  color: var(--bs-primary);
+}
+
+.safety-category-item.active {
+  background-color: var(--bs-primary-bg-subtle);
+  color: var(--bs-primary);
+}
+
+.safety-category-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  width: 2rem;
+  text-align: center;
+}
+
+/* Category Content */
+.category-content {
+  height: 100%;
+}
+
+.category-icon-large {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.topic-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1.25rem;
+  background-color: var(--bs-gray-50);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.75rem;
+  transition: all 0.25s ease;
+}
+
+.topic-card:hover {
+  background-color: var(--bs-body-bg);
+  border-color: var(--bs-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
+}
+
+.topic-card-header {
+  margin-bottom: 0.5rem;
+}
+
+.topic-title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--bs-heading-color);
+}
+
+.topic-card-body {
+  flex: 1;
+}
+
+.topic-description {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--bs-secondary-color);
+  line-height: 1.5;
+}
+
+.topic-card-footer {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--bs-border-color);
+}
+
+.topic-card-footer .btn {
+  width: 100%;
+}
+
+/* Hazard Guide */
+.hazard-guide {
+  height: 100%;
+  min-height: 600px;
+}
+
+.hazard-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.phase-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.safety-checklist {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.checklist-title {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--bs-heading-color);
+}
+
+.checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background-color: var(--bs-gray-50);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.75rem;
+  margin-bottom: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.checklist-item:hover {
+  background-color: var(--bs-primary-bg-subtle);
+  border-color: var(--bs-primary);
+}
+
+.checklist-item:has(input:checked) {
+  background-color: var(--bs-success-bg-subtle);
+  border-color: var(--bs-success);
+}
+
+.checklist-checkbox {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.125rem;
+  accent-color: var(--bs-primary);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.checklist-text {
+  flex: 1;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--bs-body-color);
+}
+
+.checklist-item:has(input:checked) .checklist-text {
+  color: var(--bs-success-text-emphasis);
+  text-decoration: line-through;
+}
+
+/* Emergency Contacts */
+.contact-card {
+  transition: all 0.25s ease;
+}
+
+.contact-card:hover {
+  border-color: var(--bs-primary);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.contact-icon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.contact-name {
+  margin: 0 0 0.375rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--bs-heading-color);
+}
+
+.contact-number {
+  font-size: 1rem;
+}
+
+.contact-type {
+  font-size: 0.75rem;
+}
+
+/* Coming Soon */
+.coming-soon h2 {
+  color: var(--bs-heading-color);
+}
+
+/* Responsive */
+@media (max-width: 991.98px) {
+  .safety-sidebar {
+    position: static;
+    max-height: none;
+    margin-bottom: 1.5rem;
+  }
+  
+  .hazard-guide {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .hazard-tabs .btn,
+  .phase-tabs .btn {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+  }
+  
+  .checklist-item {
+    padding: 0.75rem;
+  }
+  
+  .checklist-text {
+    font-size: 0.8125rem;
+  }
+}
