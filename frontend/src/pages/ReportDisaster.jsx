@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Card, CardBody, FormField, FormSection, StepIndicator, Badge } from '../components/ui';
 import { useIncidents } from '../context/IncidentContext';
+import { uploadIncidentImage, isStorageAvailable } from '../services/storage';
 import './ReportDisaster.css';
 
 const formSteps = [
@@ -76,6 +77,24 @@ function ReportDisaster() {
   const [referenceId, setReferenceId] = useState(null);
   const [submittedIncident, setSubmittedIncident] = useState(null);
   const [errors, setErrors] = useState({});
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [imageError, setImageError] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [_uploadProgress, _setUploadProgress] = useState(0);
+  const [isOnline, setIsOnline] = useState(() => navigator.onLine);
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    const updateOnlineStatus = () => setIsOnline(navigator.onLine);
+    updateOnlineStatus();
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    return () => {
+      window.removeEventListener('online', updateOnlineStatus);
+      window.removeEventListener('offline', updateOnlineStatus);
+    };
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -83,7 +102,6 @@ function ReportDisaster() {
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: null }));
     }
-    // Auto-parse coordinates into lat/lng fields
     if (name === 'coordinates') {
       const { lat, lng } = parseCoordinates(value);
       setFormData((prev) => ({
@@ -102,6 +120,40 @@ function ReportDisaster() {
       longitude: loc.lng.toFixed(6),
       coordinates: `${loc.lat.toFixed(6)}, ${loc.lng.toFixed(6)}`,
     }));
+  };
+
+  const handleImageSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setImageError(`Unsupported file type: ${file.type}. Allowed: JPEG, PNG, WebP, HEIC/HEIF`);
+      setImageFile(null);
+      setImagePreview(null);
+      if (e.target) e.target.value = '';
+      return;
+    } else if (file.size > MAX_FILE_SIZE) {
+      setImageError(`File too large: ${(file.size / (1024 * 1024)).toFixed(1)} MB. Maximum: 5 MB`);
+      setImageFile(null);
+      setImagePreview(null);
+      if (e.target) e.target.value = '';
+      return;
+    }
+
+    setImageError(null);
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const removeImage = () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImageFile(null);
+    setImagePreview(null);
+    setImageError(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const validateStep = (step) => {
@@ -124,6 +176,9 @@ function ReportDisaster() {
         } else if (Number(formData.affectedPeople) < 0) {
           newErrors.affectedPeople = 'Number of affected people cannot be negative';
         }
+        if (imageError) {
+          newErrors.image = imageError;
+        }
         break;
     }
     setErrors(newErrors);
@@ -140,10 +195,16 @@ function ReportDisaster() {
     setCurrentStep((prev) => Math.max(prev - 1, 0));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateStep(currentStep)) {
+    if (!validateStep(currentStep)) return;
+
+    setUploading(true);
+    setUploadProgress(0);
+
+    try {
       const { lat, lng } = parseCoordinates(formData.coordinates);
+      
       const incidentData = {
         disasterType: formData.disasterType,
         severity: formData.severity,
@@ -153,10 +214,37 @@ function ReportDisaster() {
         description: formData.description,
         affectedPeople: Number(formData.affectedPeople) || 0,
       };
+
       const newIncident = addIncident(incidentData);
+      let imageUrl = null;
+
+      if (imageFile && isOnline && isStorageAvailable()) {
+        try {
+          imageUrl = await uploadIncidentImage(imageFile, newIncident.incidentId, (progress) => {
+            setUploadProgress(progress);
+          });
+          
+          newIncident.imageUrl = imageUrl;
+        } catch (uploadError) {
+          console.warn('[ReportDisaster] Image upload failed:', uploadError);
+          setImageError(`Image upload failed: ${uploadError.message}. Report submitted without image.`);
+        }
+      } else if (imageFile && (!isOnline || !isStorageAvailable())) {
+        console.log('[ReportDisaster] Offline or Storage unavailable, skipping image upload');
+        newIncident.imageUploadPending = true;
+      }
+
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+
       setReferenceId(newIncident.incidentId);
-      setSubmittedIncident(newIncident);
+      setSubmittedIncident({ ...newIncident, imageUrl });
       setSubmitted(true);
+    } catch (error) {
+      console.error('[ReportDisaster] Submission failed:', error);
+      setImageError(`Submission failed: ${error.message}`);
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -204,6 +292,12 @@ function ReportDisaster() {
                         <div className="col-6"><strong>Affected:</strong> {submittedIncident.affectedPeople} people</div>
                         <div className="col-6"><strong>Status:</strong> <Badge variant="success" size="sm">{submittedIncident.status}</Badge></div>
                         <div className="col-6"><strong>Source:</strong> {submittedIncident.source}</div>
+                        {submittedIncident.imageUrl && (
+                          <div className="col-6"><strong>Image:</strong> <Badge variant="info" size="sm">Uploaded</Badge></div>
+                        )}
+                        {submittedIncident.imageUploadPending && (
+                          <div className="col-6"><strong>Image:</strong> <Badge variant="warning" size="sm">Pending (offline)</Badge></div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -228,6 +322,9 @@ function ReportDisaster() {
                           contactInfo: '',
                           mediaFiles: [],
                         });
+                        setImageFile(null);
+                        setImagePreview(null);
+                        setImageError(null);
                       }}
                     >
                       Submit Another Report
@@ -480,6 +577,61 @@ function ReportDisaster() {
                         />
                       </FormField>
 
+                      {/* Image Upload Section */}
+                      <FormField
+                        label="Incident Image (Optional)"
+                        htmlFor="imageFile"
+                        error={imageError || errors.image}
+                        hint="JPEG, PNG, WebP, HEIC/HEIF • Max 5 MB • Helps responders assess the situation"
+                      >
+                        <div className="image-upload-wrapper">
+                          {imagePreview ? (
+                            <div className="image-preview-container">
+                              <img 
+                                src={imagePreview} 
+                                alt="Selected incident image preview" 
+                                className="image-preview"
+                                aria-label="Preview of selected incident image"
+                              />
+                              <div className="image-preview-actions">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={removeImage}
+                                  aria-label="Remove selected image"
+                                >
+                                  Remove
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="image-drop-zone">
+                              <input
+                                ref={fileInputRef}
+                                type="file"
+                                id="imageFile"
+                                name="imageFile"
+                                accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+                                onChange={handleImageSelect}
+                                className="visually-hidden"
+                                aria-describedby="imageFile-hint"
+                              />
+                              <label htmlFor="imageFile" className="image-drop-label">
+                                <span className="drop-icon" aria-hidden="true">📷</span>
+                                <span className="drop-text">Click or drag to add an image</span>
+                                <span className="drop-hint">JPEG, PNG, WebP, HEIC/HEIF • Max 5 MB</span>
+                              </label>
+                            </div>
+                          )}
+                          {imageError && (
+                            <div className="image-error" role="alert">
+                              <span aria-hidden="true">⚠</span>
+                              <span>{imageError}</span>
+                            </div>
+                          )}
+                        </div>
+                      </FormField>
+
                       <div className="description-hints">
                         <h6 className="hint-title">Include if possible:</h6>
                         <ul className="hint-list">
@@ -540,8 +692,14 @@ function ReportDisaster() {
                         Next
                       </Button>
                     ) : (
-                      <Button variant="primary" size="md" type="submit" rightIcon="📤">
-                        Submit Report
+                      <Button 
+                        variant="primary" 
+                        size="md" 
+                        type="submit" 
+                        rightIcon="📤"
+                        disabled={uploading}
+                      >
+                        {uploading ? 'Uploading...' : 'Submit Report'}
                       </Button>
                     )}
                   </div>

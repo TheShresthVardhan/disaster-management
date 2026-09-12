@@ -1,16 +1,99 @@
-# React + Vite
+# DisasterIntel Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React 19 + Vite 8 application for the AI-Powered Disaster Intelligence & Response System.
 
-Currently, two official plugins are available:
+## Quick Start
+```bash
+cd frontend
+npm install
+npm run dev        # Development server at http://localhost:5173
+npm run build      # Production build
+npm run lint       # Lint with Oxlint
+npm run preview    # Preview production build
+```
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Project Structure
+```
+src/
+├── components/           # Reusable UI components
+│   ├── ui/               # Button, Card, Badge, FormField, StepIndicator, StatsCard, EmptyState
+│   ├── Header.jsx        # Navigation with theme toggle
+│   ├── Footer.jsx
+│   └── Layout.jsx        # Providers + outlet
+├── context/              # React Context providers
+│   ├── IncidentContext.jsx   # Global incident state (Firestore + localStorage)
+│   └── ThemeContext.jsx      # Light/Dark theme with localStorage persistence
+├── pages/                # Route pages
+│   ├── Home.jsx              # Dashboard (active incidents, forecasts, priorities)
+│   ├── ReportDisaster.jsx    # 5-step incident reporting + image upload
+│   ├── DisasterMap.jsx       # Map placeholder with filters
+│   ├── Alerts.jsx            # Official + citizen alerts with filters
+│   ├── SafetyInfo.jsx        # Safety categories, hazard guides, contacts
+│   └── EmergencySOS.jsx      # Hold-to-activate SOS with GPS
+├── services/             # Firebase integration
+│   ├── firebase.js       # Firebase app + Firestore + Storage init
+│   ├── firestore.js      # Incident CRUD + real-time subscription
+│   └── storage.js        # Image upload + validation
+├── App.jsx               # Routes
+├── main.jsx              # Entry point
+└── index.css             # Global styles (Bootstrap + custom CSS vars)
+```
 
-## React Compiler
+## Key Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Theme System
+- Light/Dark toggle in header (persists in localStorage)
+- Respects `prefers-color-scheme` on first visit
+- CSS variables in `index.css` for both themes
 
-## Expanding the Oxlint configuration
+### IncidentContext
+- Global state: incidents, activeIncidents, addIncident, updateIncidentStatus
+- Firestore real-time sync with `onSnapshot`
+- localStorage fallback when offline or Firebase unavailable
+- Demo incidents (Sikkim) never synced to Firestore
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+### Image Upload (Phase 4B)
+- Path: `incidents/{incidentId}/img_<timestamp>_<random>.ext`
+- Validation: JPEG/PNG/WebP/HEIC, max 5 MB
+- Preview before submit, remove option
+- Offline: skips upload, marks `imageUploadPending`
+
+### Emergency SOS
+- Hold 0.5s → 3s countdown → CRITICAL incident
+- Auto GPS capture (with permission handling)
+- 112 call button (tel:112)
+- Works offline (queued locally)
+
+## Environment Variables
+Copy `.env.example` to `.env` and fill in Firebase config:
+```env
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=...
+VITE_FIREBASE_PROJECT_ID=...
+VITE_FIREBASE_STORAGE_BUCKET=...
+VITE_FIREBASE_MESSAGING_SENDER_ID=...
+VITE_FIREBASE_APP_ID=...
+```
+
+## Scripts
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start dev server |
+| `npm run build` | Production build |
+| `npm run lint` | Oxlint |
+| `npm run preview` | Preview build |
+
+## Verification
+```bash
+npm run lint   # Passes (pre-existing warnings only)
+npm run build  # Passes (~622 kB JS gzipped)
+```
+
+## Firebase Rules (DEVELOPMENT ONLY)
+See root `storage.rules` and `firestore.rules` - **not for production**.
+
+## Future Phases
+- Phase 5: AI risk analysis, community network, recovery tracking
+- Interactive map with clustering
+- Push notifications
+- Authentication

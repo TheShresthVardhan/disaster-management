@@ -1,0 +1,36 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // DEVELOPMENT ONLY - Permissive rules for prototyping
+    // DO NOT USE IN PRODUCTION
+    // 
+    // PRODUCTION RULES SHOULD:
+    // - Require authentication
+    // - Validate file types and sizes
+    // - Restrict access by user/role
+    // - Implement proper quota limits
+    // - Add virus scanning integration
+    //
+    // See: https://firebase.google.com/docs/storage/security
+
+    match /incidents/{incidentId}/{fileName} {
+      // Allow read access to incident images for all users (prototype)
+      allow read: if true;
+      
+      // Allow write for incident images with basic validation
+      // DEVELOPMENT ONLY: No authentication required
+      allow write: if 
+        // Basic file type validation
+        request.resource.contentType.matches('image/(jpeg|png|webp|heic|heif)') &&
+        // Max 5 MB file size
+        request.resource.size <= 5 * 1024 * 1024 &&
+        // Filename safety
+        request.resource.name.matches('^img_[0-9]+_[a-z0-9]+\\.(jpg|jpeg|png|webp|heic|heif)$');
+    }
+
+    // Deny all other paths by default
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
