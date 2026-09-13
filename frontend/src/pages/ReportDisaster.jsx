@@ -241,21 +241,25 @@ function ReportDisaster() {
       case 1:
         if (!formData.severity) newErrors.severity = 'Please select a severity level';
         break;
-      case 2:
-        if (!formData.location.trim()) newErrors.location = 'Please enter a location';
-        if (formData.latitude !== '') {
-          const lat = parseFloat(formData.latitude);
-          if (isNaN(lat) || lat < 8.0 || lat > 38.0) {
-            newErrors.latitude = 'Latitude must be between 8.0 and 38.0 (India)';
-          }
+      case 2: {
+        // Location text OR a valid GPS coordinate pair both count as a location,
+        // so a GPS-only capture is never stuck on this step.
+        const hasText = formData.location.trim() !== '';
+        const lat = parseFloat(formData.latitude);
+        const lng = parseFloat(formData.longitude);
+        const hasCoords = formData.latitude !== '' && formData.longitude !== ''
+          && !isNaN(lat) && !isNaN(lng);
+        if (!hasText && !hasCoords) {
+          newErrors.location = 'Please enter a location, pick a Sikkim place, or capture GPS';
         }
-        if (formData.longitude !== '') {
-          const lng = parseFloat(formData.longitude);
-          if (isNaN(lng) || lng < 68.0 || lng > 98.0) {
-            newErrors.longitude = 'Longitude must be between 68.0 and 98.0 (India)';
-          }
+        if (formData.latitude !== '' && (isNaN(lat) || lat < 8.0 || lat > 38.0)) {
+          newErrors.latitude = 'Latitude must be between 8.0 and 38.0 (India)';
+        }
+        if (formData.longitude !== '' && (isNaN(lng) || lng < 68.0 || lng > 98.0)) {
+          newErrors.longitude = 'Longitude must be between 68.0 and 98.0 (India)';
         }
         break;
+      }
       case 3:
         if (!formData.description.trim()) newErrors.description = 'Please describe what you observed';
         else if (formData.description.trim().length < 20) newErrors.description = 'Please provide more detail (at least 20 characters)';
@@ -298,13 +302,18 @@ function ReportDisaster() {
 
     try {
       const { lat, lng } = parseCoordinates(formData.coordinates);
-      
+      const finalLat = lat !== null ? lat : (formData.latitude ? parseFloat(formData.latitude) : null);
+      const finalLng = lng !== null ? lng : (formData.longitude ? parseFloat(formData.longitude) : null);
+
       const incidentData = {
         disasterType: formData.disasterType,
         severity: formData.severity,
-        location: formData.location,
-        latitude: lat !== null ? lat : (formData.latitude ? parseFloat(formData.latitude) : null),
-        longitude: lng !== null ? lng : (formData.longitude ? parseFloat(formData.longitude) : null),
+        // Fall back to coordinates so GPS-only reports still show a location
+        // on the dashboard, map, and alerts.
+        location: formData.location.trim()
+          || (finalLat !== null && finalLng !== null ? `${finalLat.toFixed(6)}, ${finalLng.toFixed(6)}` : ''),
+        latitude: finalLat,
+        longitude: finalLng,
         description: formData.description,
         affectedPeople: Number(formData.affectedPeople) || 0,
       };
@@ -602,9 +611,8 @@ function ReportDisaster() {
                       <FormField
                         label="Address, Landmark, or Area"
                         htmlFor="location"
-                        required
                         error={currentError}
-                        hint="Enter a street address, landmark, neighborhood, or general area"
+                        hint="Street address, landmark, or area — or skip this if you capture GPS below"
                       >
                         <input
                           type="text"
