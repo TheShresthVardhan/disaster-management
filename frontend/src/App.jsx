@@ -3,6 +3,7 @@ import Layout from './components/Layout';
 import Home from './pages/Home';
 import ReportDisaster from './pages/ReportDisaster';
 import DisasterMap from './pages/DisasterMap';
+import Resources from './pages/Resources';
 import Alerts from './pages/Alerts';
 import SafetyInfo from './pages/SafetyInfo';
 import EmergencySOS from './pages/EmergencySOS';
@@ -16,6 +17,7 @@ function App() {
           <Route index element={<Home />} />
           <Route path="report" element={<ReportDisaster />} />
           <Route path="map" element={<DisasterMap />} />
+          <Route path="resources" element={<Resources />} />
           <Route path="alerts" element={<Alerts />} />
           <Route path="safety" element={<SafetyInfo />} />
           <Route path="sos" element={<EmergencySOS />} />

@@ -4,6 +4,7 @@ import os
 
 from app.api.ai import router as ai_router
 from app.api.landslide import router as landslide_router
+from app.api.optimize import router as optimize_router
 
 app = FastAPI(
     title="Disaster Intelligence API",
@@ -42,6 +43,8 @@ app.add_middleware(
 app.include_router(ai_router)
 # Include Landslide Risk routes
 app.include_router(landslide_router)
+# Include Demo Resource Optimization routes
+app.include_router(optimize_router)
 
 
 @app.get("/api/health")

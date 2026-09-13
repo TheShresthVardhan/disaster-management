@@ -8,6 +8,7 @@ const navItems = [
   { path: '/', label: 'Dashboard', icon: '📊' },
   { path: '/report', label: 'Report Incident', icon: '📝' },
   { path: '/map', label: 'Disaster Map', icon: '🗺️' },
+  { path: '/resources', label: 'Resources', icon: '🚑' },
   { path: '/alerts', label: 'Alerts', icon: '🚨' },
   { path: '/safety', label: 'Safety Info', icon: '📚' },
   { path: '/sos', label: 'Emergency SOS', icon: '🆘' },

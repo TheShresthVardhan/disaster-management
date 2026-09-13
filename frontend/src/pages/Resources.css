@@ -1,0 +1,107 @@
+.page.resources-page {
+  padding: 0;
+  min-height: 100vh;
+}
+
+.page-header-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.inventory-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.625rem 0;
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.inventory-row:last-of-type {
+  border-bottom: none;
+}
+
+.inventory-label {
+  font-weight: 500;
+  font-size: 0.9375rem;
+  margin: 0;
+}
+
+.inventory-input {
+  width: 5.5rem;
+  text-align: center;
+}
+
+.priority-rank-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.priority-rank-item {
+  border: 1px solid var(--bs-border-color);
+  border-left: 4px solid var(--bs-secondary);
+  border-radius: 0.75rem;
+  padding: 0.875rem 1rem;
+  background-color: var(--bs-body-bg);
+}
+
+.priority-rank-item[data-level="critical"] { border-left-color: var(--bs-danger); }
+.priority-rank-item[data-level="high"] { border-left-color: var(--bs-warning); }
+.priority-rank-item[data-level="moderate"] { border-left-color: var(--bs-info); }
+.priority-rank-item[data-level="low"] { border-left-color: var(--bs-success); }
+
+.priority-rank-top {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.priority-rank-num {
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: var(--bs-secondary-color);
+}
+
+.priority-rank-main {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.priority-rank-id {
+  overflow-wrap: anywhere;
+}
+
+.priority-rank-score {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--bs-primary);
+}
+
+.priority-rank-alloc {
+  margin-top: 0.375rem;
+  font-size: 0.9375rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.priority-rank-expl {
+  margin: 0.375rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--bs-secondary-color);
+}
+
+@media (max-width: 575.98px) {
+  .inventory-input {
+    width: 4.5rem;
+  }
+}

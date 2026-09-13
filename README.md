@@ -6,7 +6,7 @@ A college hackathon project to build an intelligent disaster management system t
 Frontend is called **Disastell Dashboard**. Backend is **Disaster Intelligence API** (`v0.6.0` in `backend/app/main.py`).
 
 ## Current Phase
-**Phase 6A Complete** - Landslide Risk Model Foundation + API Integration
+**Phase 6B Complete** - Demo Resource Optimization (rule-based, prototype)
 
 ### Completed Phases
 - **Phase 1** - Project Foundation (React + Vite frontend, FastAPI backend)
@@ -19,6 +19,7 @@ Frontend is called **Disastell Dashboard**. Backend is **Disaster Intelligence A
 - **Phase 5A** - Incident AI Foundation (schemas, provider interface, demo provider, validation)
 - **Phase 5B** - Incident AI API Integration (`POST /api/ai/analyze-incident`, `GET /api/ai/providers`, `GET /api/ai/health`)
 - **Phase 6A** - Landslide Risk Foundation + API (`app/ai/landslide/` + `/api/ai/landslide/*`: single/batch predict, health, model-info, RF + demo models, preprocessor, trainer, predictor, validator)
+- **Phase 6B** - Demo Resource Optimization (`app/optimization/` + `POST /api/optimize-resources`, rule-based priority scoring + greedy allocation, `/resources` frontend page)
 
 ## Technology Stack
 - **Frontend**: React 19.2 + Vite 8 + React Router 6.26 + Bootstrap 5.3 (`frontend/package.json`)
@@ -39,7 +40,8 @@ disaster-management/
 │   ├── src/
 │   │   ├── components/       # Layout, Header, Footer + ui/ (Button, Card, Badge, FormField, StatsCard, EmptyState)
 │   │   ├── context/          # IncidentContext.jsx, ThemeContext.jsx
-│   │   ├── pages/            # Home.jsx, ReportDisaster.jsx, DisasterMap.jsx (preview), Alerts.jsx, SafetyInfo.jsx, EmergencySOS.jsx (+ .css)
+│   │   ├── pages/            # Home.jsx, ReportDisaster.jsx, DisasterMap.jsx (preview), Resources.jsx (demo), Alerts.jsx, SafetyInfo.jsx, EmergencySOS.jsx (+ .css)
+│   │   ├── services/         # firebase.js, firestore.js, storage.js, resourceOptimization.js (backend client + local fallback)
 │   │   ├── services/         # firebase.js, firestore.js, storage.js
 │   │   ├── App.jsx           # 5 routes under <Layout /> (see below)
 │   │   ├── App.css
@@ -52,12 +54,17 @@ disaster-management/
 │   └── vite.config.js        # @vitejs/plugin-react
 ├── backend/                  # FastAPI application (version 0.6.0)
 │   ├── app/
-│   │   ├── main.py           # FastAPI app + CORS (5173) + ai_router + landslide_router + GET /api/health
+│   │   ├── main.py           # FastAPI app + CORS (5173) + ai_router + landslide_router + optimize_router + GET /api/health
 │   │   ├── api/
 │   │   │   ├── __init__.py
 │   │   │   ├── ai.py                 # Phase 5B: POST /api/ai/analyze-incident, GET /api/ai/providers, GET /api/ai/health
 │   │   │   ├── landslide.py          # Phase 6A: POST /api/ai/landslide/predict-risk, POST /predict-risk-batch, GET /health, GET /model-info
+│   │   │   ├── optimize.py           # Phase 6B: POST /api/optimize-resources (demo)
 │   │   │   └── landslide_schemas.py  # LandslideRiskRequest/Response, Batch Request/Response wrappers
+│   │   ├── optimization/     # Phase 6B demo resource optimization (rule-based, NOT ML)
+│   │   │   ├── schemas.py    # ResourceInput, IncidentForOptimization, OptimizeRequest/Response
+│   │   │   ├── scoring.py    # Transparent priority scoring (severity + affected + type)
+│   │   │   └── optimizer.py  # Greedy rank-order allocation against demo inventory
 │   │   ├── ai/               # Incident AI + Landslide modules
 │   │   │   ├── __init__.py   # Re-exports Phase 5A + 6A APIs
 │   │   │   ├── config.py     # AIConfig (AI_DEFAULT_PROVIDER, AI_DEMO_ENABLED, AI_MIN_CONFIDENCE, etc.)
@@ -82,6 +89,7 @@ disaster-management/
 │   │   │       ├── inference/predictor.py  # LandslideRiskPredictor (single/batch, auto demo), create_predictor(), async wrappers
 │   │   │       └── validation/validator.py # validate_landslide_input(), validate_risk_result(), get_risk_category_from_score(), sanitize_input_features()
 │   ├── requirements.txt
+│   ├── tests/test_optimization.py  # Phase 6B behavior tests (scoring, allocation, endpoint)
 │   ├── get-pip.py
 │   └── .venv/                # Python virtual environment (ignored by git)
 ├── .gitignore
@@ -140,6 +148,7 @@ Actual routes in `frontend/src/App.jsx` (all under `Layout`):
 | **Disastell Dashboard (Home)** | `/` | Active incidents, risk forecasts (static list), priority zones, stats cards, capabilities, coming-soon placeholders |
 | **Report Incident** | `/report` | 6-step wizard (type → severity → location → details → AI analysis → contact), GPS coords, image upload (5MB, JPEG/PNG/WebP/HEIC), offline queue |
 | **Disaster Map (Preview)** | `/map` | Simplified CSS preview plotting live incidents by severity; full interactive map (clustering, heat layers, live tracking) under **Future Updates** |
+| **Resource Priority (Demo)** | `/resources` | Rule-based incident ranking + simulated allocation (severity, affected, type); editable demo inventory; **DEMO / SIMULATED** labeled |
 | **Alerts** | `/alerts` | Official + citizen reports, severity filter, expandable details, channel status |
 | **Safety Info** | `/safety` | Category nav, hazard guides (Before/During/After), emergency contacts |
 | **Emergency SOS** | `/sos` | Hold-to-activate, 3s countdown, GPS capture, CRITICAL incident, 112 call button |
@@ -374,6 +383,36 @@ curl http://127.0.0.1:8000/api/ai/landslide/health
 curl http://127.0.0.1:8000/api/ai/landslide/model-info
 ```
 
+## Demo Resource Optimization (Phase 6B)
+**Status**: Complete as a transparent rule-based prototype — **NOT trained ML, NOT real dispatch.**
+
+Flow: Citizen Report / SOS → Incident Data → AI Incident Assessment → Resource Optimization → Priority + Recommended Allocation.
+
+### Rule set (`rule-based-v1`, see `backend/app/optimization/scoring.py`)
+```
+score = severity_weight (critical 100 / high 60 / moderate 30 / low 10)
+      + min(affected_people, 500) × 0.1          (max +50)
+      + disaster_type_weight                      (max +10, e.g. earthquake)
+levels: >=100 critical | >=60 high | >=30 moderate | else low
+```
+- AI-predicted severity is preferred when the incident carries an `aiAssessment`.
+- Non-ACTIVE incidents are down-weighted (×0.3), since only ACTIVE incidents are ranked by default.
+- Recommended resource is a fixed type mapping (e.g. flood → `rescue_team`); quantity = 1 per 25 affected people (1–20).
+- Greedy allocation by rank against a small simulated inventory (ambulance ×4, rescue_team ×6, relief_kit ×50). Shortfalls are reported, never hidden.
+
+### Testing it
+```bash
+curl -X POST http://127.0.0.1:8000/api/optimize-resources \
+  -H "Content-Type: application/json" \
+  -d '{"incidents":[{"incident_id":"INC-1","disaster_type":"flood","severity":"critical","affected_people":45,"status":"ACTIVE"}],"resources":[]}'
+
+cd backend && .venv/bin/python -m pytest tests/ -q
+```
+Omit `resources` (or send `[]`) to use the built-in DEMO inventory. Every response carries `is_demo: true`.
+
+### Frontend (`/resources`)
+Uses live `IncidentContext` data (no second incident system). Shows rank, severity, affected people, recommended resource + allocated/recommended quantity, score, and the plain-language explanation. Editable demo inventory with re-run. If the backend is unreachable (static hosting), the same rule set runs locally and the source is labeled. Bannered **DEMO / SIMULATED RESOURCE ALLOCATION** throughout.
+
 ## Current API Endpoints
 Mounted in `backend/app/main.py`:
 
@@ -387,6 +426,7 @@ Mounted in `backend/app/main.py`:
 | `POST` | `/api/ai/landslide/predict-risk-batch` | `app/api/landslide.py` | Batch prediction for `locations[]` |
 | `GET` | `/api/ai/landslide/health` | `app/api/landslide.py` | Landslide health (demo, model_loaded, timestamp) |
 | `GET` | `/api/ai/landslide/model-info` | `app/api/landslide.py` | Loaded model metadata via `predictor.get_model_info()` |
+| `POST` | `/api/optimize-resources` | `app/api/optimize.py` | **DEMO**: rank incidents + greedy allocation from demo inventory; always `is_demo: true` |
 
 Interactive docs: `http://127.0.0.1:8000/docs`
 
@@ -468,5 +508,23 @@ service firebase.storage {
 - Training pipeline with proper dataset management + model versioning / A/B testing
 - Firestore attachment of AI results to incidents
 - Risk forecasting (temporal), landslide susceptibility / flood progression modeling
-- Resource optimization (allocation algorithms)
 - Auth, map clustering, notifications, weather APIs, admin dashboard, production deploy
+
+## Project Status
+### IMPLEMENTED
+- Incident reporting (wizard, GPS, image upload, offline queue)
+- Emergency SOS (hold-to-activate, GPS, CRITICAL incident, 112 call)
+- Firebase persistence (Firestore sync) + Storage (images)
+- AI incident assessment (`POST /api/ai/analyze-incident`, demo provider)
+- Demo resource optimization (`POST /api/optimize-resources`, `/resources` page)
+
+### DEMO (simulated — not real)
+- Resource availability (built-in inventory: ambulance ×4, rescue_team ×6, relief_kit ×50)
+- Allocation recommendations (transparent rule-based ranking, `is_demo: true`)
+
+### FUTURE
+- Real-time government resource feeds
+- Live ambulance/rescue-team locations
+- Advanced optimization algorithms
+- Real-time traffic/route optimization
+- Multi-agency coordination
