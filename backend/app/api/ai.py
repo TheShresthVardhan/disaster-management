@@ -170,15 +170,15 @@ async def list_providers():
 )
 async def ai_health_check():
     """Health check for AI service."""
-    from app.ai import is_firestore_available
-    
+    # NOTE: Firestore is used directly by the frontend; the backend has no
+    # Firestore integration, so this is always False (not a live check).
     provider = get_provider()
-    
+
     return {
         "status": "ok",
         "provider": provider.name,
         "provider_version": provider.version,
         "is_demo": provider.is_demo,
-        "firestore_available": is_firestore_available(),
+        "firestore_available": False,
         "timestamp": int(time.time())
     }

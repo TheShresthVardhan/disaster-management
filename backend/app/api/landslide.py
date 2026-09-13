@@ -165,8 +165,6 @@ async def predict_landslide_risk_batch(request: LandslidePredictionBatchRequest)
 )
 async def landslide_health_check():
     """Health check for landslide risk service."""
-    from app.ai import is_firestore_available
-    
     predictor = get_landslide_predictor()
     
     return {
