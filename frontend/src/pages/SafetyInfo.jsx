@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Button, Card, CardHeader, CardBody, Badge, PlaceholderCard } from '../components/ui';
+import { Button, Card, CardHeader, CardBody, Badge, PlaceholderCard, DemoNotice } from '../components/ui';
 import './SafetyInfo.css';
 
 function topicSlug(title) {
@@ -444,6 +444,9 @@ function SafetyInfo() {
                 Comprehensive guides for disaster preparedness, response, and recovery
               </p>
             </div>
+          </div>
+          <div className="mt-3">
+            <DemoNotice text={<><strong>General guidance only.</strong> Demo content adapted from public safety sources — always follow live orders from authorities and call <strong>112</strong> in a real emergency.</>} />
           </div>
         </header>
 

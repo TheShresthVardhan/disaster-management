@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useIncidents } from '../context/IncidentContext';
-import { Button, Card, CardHeader, CardBody, Badge, StatsCard, PlaceholderCard, EmptyState } from '../components/ui';
+import { Button, Card, CardHeader, CardBody, Badge, StatsCard, PlaceholderCard, EmptyState, DemoNotice } from '../components/ui';
 import './Home.css';
 
 const riskForecast = [
@@ -35,6 +35,9 @@ function Home() {
 
   return (
     <div className="page home-page">
+      <div className="container-fluid px-3 px-md-4 pt-3">
+        <DemoNotice />
+      </div>
       {/* Hero / Status Overview */}
       <section className="hero-section" aria-labelledby="hero-title">
         <div className="container-fluid px-3 px-md-4">

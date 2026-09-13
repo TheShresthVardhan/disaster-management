@@ -178,7 +178,7 @@ function DisasterMap() {
             <Badge variant="info" size="md" className="ms-auto">Sikkim Pilot</Badge>
           </div>
           <div className="map-notice">
-            <div className="map-notice-badge">Prototype</div>
+            <div className="map-notice-badge">DEMO / PROTOTYPE</div>
             <div className="map-notice-text">
               Markers show real stored incidents (including demo seed data). No live
               government feeds — for real emergencies call <strong>112</strong>.

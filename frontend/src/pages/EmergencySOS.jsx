@@ -223,7 +223,7 @@ function EmergencySOS() {
 
           {/* Prototype Notice */}
           <div className="prototype-notice">
-            <div className="prototype-badge">PROTOTYPE</div>
+            <div className="prototype-badge">DEMO / PROTOTYPE</div>
             <div className="prototype-text">
               <strong>Important:</strong> This creates an emergency incident in local storage only.
               It does NOT contact 112 or any emergency service. <strong>Call 112 directly for real emergencies.</strong>

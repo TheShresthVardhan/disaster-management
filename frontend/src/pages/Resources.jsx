@@ -66,10 +66,10 @@ function Resources() {
                 Which active incidents should receive limited emergency resources first.
               </p>
             </div>
-            <Badge variant="warning" size="md" className="ms-auto">Demo / Simulated</Badge>
+            <Badge variant="warning" size="md" className="ms-auto">DEMO / PROTOTYPE</Badge>
           </div>
           <div className="prototype-notice">
-            <div className="prototype-badge">Demo</div>
+            <div className="prototype-badge">DEMO / PROTOTYPE</div>
             <div className="prototype-text">
               <strong>DEMO / SIMULATED RESOURCE ALLOCATION.</strong> Transparent rule-based
               ranking (severity + affected people + type) against a small simulated

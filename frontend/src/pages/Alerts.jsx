@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useIncidents } from '../context/IncidentContext';
-import { Button, Card, CardHeader, CardBody, Badge, EmptyState, StatsCard } from '../components/ui';
+import { Button, Card, CardHeader, CardBody, Badge, EmptyState, StatsCard, DemoNotice } from '../components/ui';
 import './Alerts.css';
 
 const officialAlerts = [
@@ -126,6 +126,9 @@ function Alerts() {
                 Channels
               </Button>
             </div>
+          </div>
+          <div className="mt-3">
+            <DemoNotice text={<><strong>Simulated alerts.</strong> Official alerts here are demo samples and citizen reports are stored locally — not verified by authorities. For real emergencies call <strong>112</strong>.</>} />
           </div>
         </header>
 
@@ -335,7 +338,7 @@ function Alerts() {
               </Card>
 
               <Card variant="elevated" className="alert-sidebar-card mt-3">
-                <CardHeader title="Prototype Notice" />
+                <CardHeader title="Demo / Prototype Notice" />
                 <CardBody className="p-3">
                   <p className="text-muted small mb-0">
                     This prototype stores citizen reports in browser localStorage only. 
