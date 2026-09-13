@@ -12,6 +12,7 @@ import logging
 from app.ai import get_provider
 from app.ai.landslide.schemas import (
     LandslideInputFeatures,
+    LandslideRiskRequest,
     LandslideRiskResult,
     LandslideRiskResponse,
     LandslidePredictionBatchRequest,

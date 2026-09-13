@@ -59,7 +59,34 @@ function parseCoordinates(coordString) {
   return { lat, lng };
 }
 
-const API_BASE = (import.meta.env.VITE_API_BASE || 'http://localhost:8000').replace(/\/$/, '');
+const API_BASE = (
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_API_BASE ||
+  'http://localhost:8000'
+).replace(/\/$/, '');
+
+// Map frontend form values to backend DisasterType enum.
+// Backend supports: flood, landslide, earthquake, fire, cyclone, storm,
+// infrastructure_damage, other. The form offers friendlier labels, so map them.
+const DISASTER_TYPE_MAP = {
+  flood: 'flood',
+  earthquake: 'earthquake',
+  wildfire: 'fire',
+  cyclone: 'cyclone',
+  tornado: 'storm',
+  landslide: 'landslide',
+  tsunami: 'flood',
+  volcanic: 'other',
+  extreme_heat: 'other',
+  extreme_cold: 'other',
+  drought: 'other',
+  other: 'other',
+};
+
+function toBackendDisasterType(frontendType) {
+  if (!frontendType) return undefined;
+  return DISASTER_TYPE_MAP[frontendType] || 'other';
+}
 
 function ReportDisaster() {
   const { addIncident } = useIncidents();
@@ -84,7 +111,7 @@ function ReportDisaster() {
   const [imagePreview, setImagePreview] = useState(null);
   const [imageError, setImageError] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [_uploadProgress, _setUploadProgress] = useState(0);
+  const [, setUploadProgress] = useState(0);
   const [isOnline, setIsOnline] = useState(() => navigator.onLine);
   const fileInputRef = useRef(null);
 
@@ -234,7 +261,7 @@ function ReportDisaster() {
         incidentData.aiAssessment = aiAnalysis;
       }
 
-      const newIncident = addIncident(incidentData);
+      const newIncident = await addIncident(incidentData);
       let imageUrl = null;
 
       if (imageFile && isOnline && isStorageAvailable()) {
@@ -279,16 +306,21 @@ function ReportDisaster() {
 
     try {
       const { lat, lng } = parseCoordinates(formData.coordinates);
-      
+
+      // Only send http(s) image URLs to the backend. Local blob: previews
+      // fail backend URL validation, so omit them.
+      const httpImageUrl =
+        imagePreview && imagePreview.startsWith('http') ? imagePreview : undefined;
+
       const requestData = {
-        disaster_type: formData.disasterType || undefined,
+        disaster_type: toBackendDisasterType(formData.disasterType),
         reported_severity: formData.severity || undefined,
         description: formData.description,
         latitude: formData.latitude ? parseFloat(formData.latitude) : (lat !== null ? lat : undefined),
         longitude: formData.longitude ? parseFloat(formData.longitude) : (lng !== null ? lng : undefined),
         location_text: formData.location,
         affected_people: Number(formData.affectedPeople) || 0,
-        image_url: imagePreview || undefined,
+        image_url: httpImageUrl,
       };
 
       const response = await fetch(`${API_BASE}/api/ai/analyze-incident`, {
@@ -300,7 +332,14 @@ function ReportDisaster() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.detail?.message || data.error || 'AI analysis failed');
+        const detail = data?.detail;
+        const message =
+          (typeof detail === 'string' && detail) ||
+          detail?.message ||
+          (Array.isArray(detail) ? detail.map((d) => d?.msg).filter(Boolean).join('; ') : '') ||
+          data?.error ||
+          'AI analysis failed';
+        throw new Error(message);
       }
 
       if (!data.success) {
@@ -311,7 +350,13 @@ function ReportDisaster() {
       setAiError(null);
     } catch (error) {
       console.error('[ReportDisaster] AI analysis failed:', error);
-      setAiError(error.message || 'AI analysis failed. Please try again.');
+      const isNetworkError =
+        error instanceof TypeError && /fetch|network|load failed/i.test(error.message || '');
+      setAiError(
+        isNetworkError
+          ? `Cannot reach AI backend at ${API_BASE}. Start it with "uvicorn app.main:app --reload" or set VITE_API_URL. You can still submit the report without AI analysis.`
+          : error.message || 'AI analysis failed. Please try again.'
+      );
       setAiAnalysis(null);
     } finally {
       setAiAnalyzing(false);

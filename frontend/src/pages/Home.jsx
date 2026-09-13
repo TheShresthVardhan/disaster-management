@@ -207,8 +207,8 @@ function Home() {
             <p className="section-subtitle">Integrated tools for comprehensive disaster management</p>
           </header>
           
-          <div className="row g-4">
-            <div className="col-12 col-md-6 col-lg-3">
+          <div className="row g-4 justify-content-center">
+            <div className="col-12 col-md-6 col-lg-4">
               <Card variant="outlined" hoverable className="h-100 capability-card">
                 <CardBody className="text-center p-4">
                   <div className="capability-icon" aria-hidden="true">📝</div>
@@ -221,7 +221,7 @@ function Home() {
                 </CardBody>
               </Card>
             </div>
-            <div className="col-12 col-md-6 col-lg-3">
+            <div className="col-12 col-md-6 col-lg-4">
               <Card variant="outlined" hoverable className="h-100 capability-card">
                 <CardBody className="text-center p-4">
                   <div className="capability-icon" aria-hidden="true">🚨</div>
@@ -234,7 +234,7 @@ function Home() {
                 </CardBody>
               </Card>
             </div>
-            <div className="col-12 col-md-6 col-lg-3">
+            <div className="col-12 col-md-6 col-lg-4">
               <Card variant="outlined" hoverable className="h-100 capability-card">
                 <CardBody className="text-center p-4">
                   <div className="capability-icon" aria-hidden="true">📚</div>

@@ -317,12 +317,12 @@ function SafetyInfo() {
           </div>
           <div className="row g-3">
             {[
-              { name: 'Emergency Services', number: '911 (US) / 112 (EU)', type: 'Universal emergency number', icon: '🚨' },
-              { name: 'FEMA', number: '1-800-621-3362', type: 'Disaster assistance', icon: '🏛️' },
-              { name: 'Red Cross', number: '1-800-RED-CROSS', type: 'Shelter & relief services', icon: '🩸' },
-              { name: 'Poison Control', number: '1-800-222-1222', type: 'Poison emergencies', icon: '☠️' },
-              { name: 'NWS Alerts', number: 'weather.gov', type: 'Weather alerts & forecasts', icon: '🌤️' },
-              { name: 'Local EMA', number: 'Check local directory', type: 'County emergency management', icon: '📍' },
+              { name: 'Emergency Services (India)', number: '112', type: 'Police, Fire, Medical & Disaster — single number', icon: '🚨' },
+              { name: 'Sikkim SDRF / Disaster Management', number: '112 / 03592-202-201', type: 'Sikkim State Emergency Operation Centre', icon: '🏔️' },
+              { name: 'NDMA / NDRF Helpline', number: '1078 / 011-26701700', type: 'National disaster helpline & control room', icon: '🏛️' },
+              { name: 'Ambulance / Medical', number: '102 / 108', type: 'Medical emergency & ambulance', icon: '🚑' },
+              { name: 'IMD Weather Alerts', number: 'mausam.imd.gov.in', type: 'Weather alerts & forecasts (India)', icon: '🌤️' },
+              { name: 'Local DDMA', number: 'Check district directory', type: 'District emergency management (Sikkim)', icon: '📍' },
             ].map((contact) => (
               <div key={contact.name} className="col-12 col-md-6 col-lg-4">
                 <Card variant="outlined" hoverable className="h-100 contact-card">

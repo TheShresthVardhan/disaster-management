@@ -105,10 +105,6 @@ export function IncidentProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    saveToLocalStorage(incidents);
-  }, [incidents]);
-
-  useEffect(() => {
     if (!isFirestoreAvailable()) {
       console.log('[IncidentContext] Firestore not available, using localStorage only');
       setFirestoreReady(true);
@@ -116,43 +112,39 @@ export function IncidentProvider({ children }) {
     }
 
     let unsubscribe = () => {};
+    let cancelled = false;
+
+    const mergeWithLocalOnly = (firestoreData, localIncidents) => {
+      const localOnly = localIncidents.filter(inc =>
+        isDemoIncident(inc) ||
+        !firestoreData.some(fi => fi.incidentId === inc.incidentId)
+      );
+      const merged = [...firestoreData];
+      localOnly.forEach(localInc => {
+        if (!merged.some(m => m.incidentId === localInc.incidentId)) {
+          merged.push(localInc);
+        }
+      });
+      return merged;
+    };
 
     const initFirestore = async () => {
       try {
         setIsSyncing(true);
         console.log('[IncidentContext] Initializing Firestore connection...');
-        
-        const firestoreIncidents = await fetchIncidents();
-        
-        const localOnly = incidents.filter(inc => 
-          isDemoIncident(inc) || 
-          !firestoreIncidents.some(fi => fi.incidentId === inc.incidentId)
-        );
 
-        const merged = [...firestoreIncidents];
-        localOnly.forEach(localInc => {
-          if (!merged.some(m => m.incidentId === localInc.incidentId)) {
-            merged.push(localInc);
-          }
+        const firestoreIncidents = await fetchIncidents();
+        if (cancelled) return;
+
+        setIncidents((prev) => {
+          const merged = mergeWithLocalOnly(firestoreIncidents, prev);
+          console.log('[IncidentContext] Initial Firestore sync complete. Total incidents:', merged.length);
+          return merged;
         });
 
-        setIncidents(merged);
-        console.log('[IncidentContext] Initial Firestore sync complete. Total incidents:', merged.length);
-
         unsubscribe = subscribeToIncidents((firestoreData) => {
-          const localOnly = incidents.filter(inc => 
-            isDemoIncident(inc) || 
-            !firestoreData.some(fi => fi.incidentId === inc.incidentId)
-          );
-          
-          const merged = [...firestoreData];
-          localOnly.forEach(localInc => {
-            if (!merged.some(m => m.incidentId === localInc.incidentId)) {
-              merged.push(localInc);
-            }
-          });
-          
-          setIncidents(merged);
+          if (cancelled) return;
+          setIncidents((prev) => mergeWithLocalOnly(firestoreData, prev));
           console.log('[IncidentContext] Real-time Firestore update received');
         });
 
@@ -160,19 +152,22 @@ export function IncidentProvider({ children }) {
         setFirestoreError(null);
       } catch (error) {
         console.error('[IncidentContext] Firestore initialization failed:', error);
-        setFirestoreError(error.message);
-        setFirestoreReady(true);
+        if (!cancelled) {
+          setFirestoreError(error.message);
+          setFirestoreReady(true);
+        }
       } finally {
-        setIsSyncing(false);
+        if (!cancelled) setIsSyncing(false);
       }
     };
 
     initFirestore();
 
     return () => {
+      cancelled = true;
       unsubscribe();
     };
-  }, [incidents]);
+  }, []);
 
   const addIncident = useCallback(async (incidentData) => {
     const newIncident = {

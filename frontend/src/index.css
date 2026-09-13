@@ -249,3 +249,39 @@ button, input, select, textarea {
 .border-app { border-color: var(--app-border) !important; }
 .shadow-app { box-shadow: var(--app-shadow) !important; }
 .shadow-lg-app { box-shadow: var(--app-shadow-lg) !important; }
+
+/* Cross-device hardening (laptop + mobile) */
+html, body {
+  overflow-x: hidden;
+}
+
+/* Prevent iOS auto-zoom on focus + keep tap targets usable */
+input, select, textarea {
+  font-size: 1rem;
+  max-width: 100%;
+}
+
+button, .btn, a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 575.98px) {
+  button, .btn, input, select, textarea, .nav-link {
+    min-height: 44px;
+  }
+
+  .btn:not(.btn-sm) {
+    white-space: normal;
+    text-align: center;
+  }
+}
+
+/* Long IDs / URLs / codes should wrap instead of breaking layout */
+code, pre, .reference-code, .alert-meta, .channels-list {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+table {
+  max-width: 100%;
+}

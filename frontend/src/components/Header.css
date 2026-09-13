@@ -73,10 +73,25 @@
   .navbar-nav {
     padding: 1rem 0;
   }
+
+  /* In the collapsed mobile menu, always show text labels next to icons */
+  .nav-label {
+    display: inline;
+  }
   
   .nav-link {
     padding: 0.75rem 1rem !important;
     border-radius: 0.5rem;
+  }
+
+  .header-actions {
+    flex-wrap: wrap;
+    padding-bottom: 1rem;
+  }
+
+  .header-actions .btn {
+    flex: 1 1 auto;
+    min-height: 44px;
   }
   
   .nav-icon {
