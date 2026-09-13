@@ -60,12 +60,51 @@ const officialAlerts = [
 
 const severityOrder = { critical: 0, high: 1, moderate: 2, low: 3 };
 
+function incidentToAlert(inc) {
+  return {
+    id: inc.incidentId,
+    type: `${inc.disasterType.charAt(0).toUpperCase() + inc.disasterType.slice(1).replace('_', ' ')} Report`,
+    severity: inc.severity,
+    area: inc.location,
+    issued: new Date(inc.timestamp).toISOString().replace('T', ' ').slice(0, 19) + ' UTC',
+    expires: new Date(new Date(inc.timestamp).getTime() + 24 * 60 * 60 * 1000).toISOString().replace('T', ' ').slice(0, 19) + ' UTC',
+    description: inc.description,
+    action: 'Citizen-reported incident. Verify details on ground. Coordinate with local authorities for response.',
+    channels: ['Citizen Report'],
+    source: 'Citizen Report',
+    affectedPeople: inc.affectedPeople,
+  };
+}
+
 function Alerts() {
   const { incidents } = useIncidents();
   const [filterSeverity, setFilterSeverity] = useState('all');
   const [expandedId, setExpandedId] = useState(null);
   const [activeTab, setActiveTab] = useState('active');
   const [copiedId, setCopiedId] = useState(null);
+  const [showSubscribe, setShowSubscribe] = useState(false);
+  const [subError, setSubError] = useState(null);
+  const [subscription, setSubscription] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('disastell-alert-subscription')) || null;
+    } catch {
+      return null;
+    }
+  });
+  const [subForm, setSubForm] = useState({
+    phone: subscription?.phone || '',
+    email: subscription?.email || '',
+    push: subscription?.push ?? true,
+    sms: subscription?.sms ?? false,
+    emailCh: subscription?.emailCh ?? false,
+  });
+  const [acknowledgedIds, setAcknowledgedIds] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('disastell-ack-alerts')) || [];
+    } catch {
+      return [];
+    }
+  });
 
   const shareAlert = async (alert) => {
     const text = `${alert.type} (${alert.severity}) — ${alert.area}\n${alert.description}\nRecommended: ${alert.action}`;
@@ -83,34 +122,73 @@ function Alerts() {
     setTimeout(() => setCopiedId((id) => (id === alert.id ? null : id)), 2000);
   };
 
+  const saveSubscription = (e) => {
+    e.preventDefault();
+    if (subForm.sms && !subForm.phone.trim()) {
+      setSubError('Enter a phone number for SMS alerts, or uncheck SMS.');
+      return;
+    }
+    if (subForm.emailCh && !subForm.email.trim()) {
+      setSubError('Enter an email address for email alerts, or uncheck Email.');
+      return;
+    }
+    if (!subForm.push && !subForm.sms && !subForm.emailCh) {
+      setSubError('Pick at least one channel (Push, SMS, or Email).');
+      return;
+    }
+    const data = {
+      phone: subForm.phone.trim(),
+      email: subForm.email.trim(),
+      push: subForm.push,
+      sms: subForm.sms,
+      emailCh: subForm.emailCh,
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem('disastell-alert-subscription', JSON.stringify(data));
+    setSubscription(data);
+    setSubError(null);
+  };
+
+  const unsubscribe = () => {
+    localStorage.removeItem('disastell-alert-subscription');
+    setSubscription(null);
+    setSubForm({ phone: '', email: '', push: true, sms: false, emailCh: false });
+  };
+
+  const toggleAcknowledge = (alertId) => {
+    setAcknowledgedIds((prev) => {
+      const next = prev.includes(alertId) ? prev.filter((id) => id !== alertId) : [...prev, alertId];
+      localStorage.setItem('disastell-ack-alerts', JSON.stringify(next));
+      return next;
+    });
+  };
+
   // Convert citizen incidents to alert format
-  const citizenAlerts = useMemo(() => 
+  const citizenAlerts = useMemo(() =>
     incidents
       .filter(inc => inc.status === 'ACTIVE' && inc.source === 'Citizen Report')
-      .map(inc => ({
-        id: inc.incidentId,
-        type: `${inc.disasterType.charAt(0).toUpperCase() + inc.disasterType.slice(1).replace('_', ' ')} Report`,
-        severity: inc.severity,
-        area: inc.location,
-        issued: new Date(inc.timestamp).toISOString().replace('T', ' ').slice(0, 19) + ' UTC',
-        expires: new Date(new Date(inc.timestamp).getTime() + 24 * 60 * 60 * 1000).toISOString().replace('T', ' ').slice(0, 19) + ' UTC',
-        description: inc.description,
-        action: 'Citizen-reported incident. Verify details on ground. Coordinate with local authorities for response.',
-        channels: ['Citizen Report'],
-        source: 'Citizen Report',
-        affectedPeople: inc.affectedPeople,
-      })),
+      .map(incidentToAlert),
+    [incidents]
+  );
+
+  // Resolved / inactive citizen reports power the History tab
+  const pastAlerts = useMemo(() =>
+    incidents
+      .filter(inc => inc.status !== 'ACTIVE' && inc.source === 'Citizen Report')
+      .map(incidentToAlert),
     [incidents]
   );
 
   // Combine official alerts with citizen reports
   const allAlerts = useMemo(() => [...officialAlerts, ...citizenAlerts], [citizenAlerts]);
 
-  const filteredAlerts = useMemo(() => 
-    allAlerts
+  const tabAlerts = activeTab === 'history' ? pastAlerts : allAlerts;
+
+  const filteredAlerts = useMemo(() =>
+    tabAlerts
       .filter((a) => filterSeverity === 'all' || a.severity === filterSeverity)
       .sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]),
-    [filterSeverity, allAlerts]
+    [filterSeverity, tabAlerts]
   );
 
   const stats = useMemo(() => ({
@@ -136,10 +214,23 @@ function Alerts() {
               </p>
             </div>
             <div className="d-flex gap-2">
-              <Button variant="outline" size="sm" leftIcon="🔔" disabled title="Alert subscriptions arrive in a future update">
-                Subscribe
+              <Button
+                variant={subscription ? 'primary' : 'outline'}
+                size="sm"
+                leftIcon="🔔"
+                onClick={() => setShowSubscribe((s) => !s)}
+                aria-expanded={showSubscribe}
+                title={subscription ? 'View your alert subscription' : 'Subscribe to demo alerts'}
+              >
+                {subscription ? 'Subscribed ✓' : 'Subscribe'}
               </Button>
-              <Button variant="primary" size="sm" leftIcon="⚙️" disabled title="Channel settings arrive in a future update">
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon="⚙️"
+                onClick={() => document.getElementById('notification-channels')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                title="Jump to notification channels"
+              >
                 Channels
               </Button>
             </div>
@@ -148,6 +239,83 @@ function Alerts() {
             <DemoNotice text={<><strong>Simulated alerts.</strong> Official alerts here are demo samples and citizen reports are stored locally — not verified by authorities. For real emergencies call <strong>112</strong>.</>} />
           </div>
         </header>
+
+        {/* Subscribe panel (demo: stored in this browser only) */}
+        {showSubscribe && (
+          <Card variant="elevated" className="mb-4">
+            <CardHeader title="Alert Subscription" subtitle="Demo only — saved in this browser, no messages are actually sent" />
+            <CardBody>
+              {subscription ? (
+                <div>
+                  <p className="mb-2">
+                    Subscribed via{' '}
+                    <strong>
+                      {[subscription.push && 'Push', subscription.sms && 'SMS', subscription.emailCh && 'Email'].filter(Boolean).join(', ')}
+                    </strong>
+                    {subscription.phone && <> · SMS: {subscription.phone}</>}
+                    {subscription.email && <> · Email: {subscription.email}</>}
+                  </p>
+                  <div className="d-flex gap-2 flex-wrap">
+                    <Button variant="outline" size="sm" onClick={() => { setSubscription(null); setSubForm({ phone: subscription.phone || '', email: subscription.email || '', push: !!subscription.push, sms: !!subscription.sms, emailCh: !!subscription.emailCh }); }}>
+                      Edit
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={unsubscribe}>
+                      Unsubscribe
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={saveSubscription}>
+                  <div className="row g-3">
+                    <div className="col-12 col-md-6">
+                      <label htmlFor="sub-phone" className="form-label">Phone (for SMS)</label>
+                      <input
+                        type="tel"
+                        id="sub-phone"
+                        className="form-control"
+                        placeholder="e.g. 98765 43210"
+                        value={subForm.phone}
+                        onChange={(e) => setSubForm({ ...subForm, phone: e.target.value })}
+                      />
+                    </div>
+                    <div className="col-12 col-md-6">
+                      <label htmlFor="sub-email" className="form-label">Email</label>
+                      <input
+                        type="email"
+                        id="sub-email"
+                        className="form-control"
+                        placeholder="you@example.com"
+                        value={subForm.email}
+                        onChange={(e) => setSubForm({ ...subForm, email: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="d-flex gap-3 flex-wrap mt-3">
+                    {[
+                      ['push', 'Push notifications'],
+                      ['sms', 'SMS'],
+                      ['emailCh', 'Email'],
+                    ].map(([key, label]) => (
+                      <label key={key} className="form-check d-flex align-items-center gap-2 mb-0">
+                        <input
+                          type="checkbox"
+                          className="form-check-input mt-0"
+                          checked={subForm[key]}
+                          onChange={(e) => setSubForm({ ...subForm, [key]: e.target.checked })}
+                        />
+                        <span>{label}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {subError && <div className="alert alert-danger mt-3 mb-0 py-2 small">{subError}</div>}
+                  <Button variant="primary" size="sm" type="submit" className="mt-3">
+                    Save Subscription
+                  </Button>
+                </form>
+              )}
+            </CardBody>
+          </Card>
+        )}
 
         {/* Stats Row */}
         <div className="row g-3 mb-4">
@@ -192,8 +360,7 @@ function Alerts() {
             role="tab"
             aria-selected={activeTab === 'history'}
             onClick={() => setActiveTab('history')}
-            disabled
-            title="Alert history arrives in a future update"
+            title="Resolved citizen reports"
           >
             History
           </Button>
@@ -222,9 +389,9 @@ function Alerts() {
             <section aria-label="Alert list" className="alert-list">
               {filteredAlerts.length === 0 ? (
                 <EmptyState
-                  icon="🔍"
-                  title="No alerts match current filter"
-                  description="Try adjusting your severity filter"
+                  icon={activeTab === 'history' ? '📜' : '🔍'}
+                  title={activeTab === 'history' ? 'No past alerts yet' : 'No alerts match current filter'}
+                  description={activeTab === 'history' ? 'Resolved citizen reports will appear here' : 'Try adjusting your severity filter'}
                 />
               ) : (
                 filteredAlerts.map((alert) => {
@@ -271,7 +438,15 @@ function Alerts() {
                           >
                             {copiedId === alert.id ? 'Copied ✓' : 'Share'}
                           </Button>
-                          <Button variant="ghost" size="sm" disabled title="Acknowledgement tracking arrives in a future update">Acknowledge</Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleAcknowledge(alert.id)}
+                            aria-pressed={acknowledgedIds.includes(alert.id)}
+                            title={acknowledgedIds.includes(alert.id) ? 'Marked as seen — click to undo' : 'Mark this alert as seen'}
+                          >
+                            {acknowledgedIds.includes(alert.id) ? 'Acknowledged ✓' : 'Acknowledge'}
+                          </Button>
                         </div>
                       </div>
                       
@@ -308,6 +483,7 @@ function Alerts() {
 
           <aside className="col-lg-4">
             <div className="sidebar-sticky">
+              <div id="notification-channels">
               <Card variant="elevated" className="alert-sidebar-card">
                 <CardHeader title="Notification Channels" />
                 <CardBody className="p-0">
@@ -335,11 +511,18 @@ function Alerts() {
                       </div>
                     ))}
                   </div>
-                  <Button variant="outline" size="sm" className="w-100 mt-3" disabled title="Notification preferences arrive in a future update">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-100 mt-3"
+                    onClick={() => { setShowSubscribe(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    title="Open subscription preferences"
+                  >
                     Manage Preferences
                   </Button>
                 </CardBody>
               </Card>
+              </div>
 
               <Card variant="elevated" className="alert-sidebar-card mt-3">
                 <CardHeader title="Alert Statistics" />
