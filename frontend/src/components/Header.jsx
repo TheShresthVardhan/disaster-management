@@ -6,7 +6,6 @@ import './Header.css';
 const navItems = [
   { path: '/', label: 'Dashboard', icon: '📊' },
   { path: '/report', label: 'Report Incident', icon: '📝' },
-  { path: '/map', label: 'Incident Map', icon: '🗺️' },
   { path: '/alerts', label: 'Alerts', icon: '🚨' },
   { path: '/safety', label: 'Safety Info', icon: '📚' },
   { path: '/sos', label: 'Emergency SOS', icon: '🆘' },
@@ -19,9 +18,9 @@ function Header() {
     <header className="app-header" role="banner">
       <nav className="navbar navbar-expand-lg" aria-label="Main navigation">
         <div className="container-fluid px-3 px-md-4">
-          <NavLink to="/" className="navbar-brand d-flex align-items-center gap-2" aria-label="DisasterIntel Home">
-            <span className="brand-icon" aria-hidden="true">🛡️</span>
-            <span className="brand-text">DisasterIntel</span>
+          <NavLink to="/" className="navbar-brand d-flex align-items-center gap-2" aria-label="Disastell Home">
+            <img src="/disastell-icon.png" alt="Disastell logo" className="brand-logo" />
+            <span className="brand-text">Disastell</span>
           </NavLink>
           <button
             className="navbar-toggler"

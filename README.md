@@ -120,7 +120,6 @@ API documentation at `http://127.0.0.1:8000/docs`
 |------|-------|--------------|
 | **Dashboard** | `/` | Active incidents, risk forecasts, priority zones, stats cards |
 | **Report Incident** | `/report` | 5-step wizard, GPS coords, image upload (5MB, JPEG/PNG/WebP/HEIC), offline queue |
-| **Incident Map** | `/map` | Filter sidebar (type/severity/time), legend, placeholder for Phase 3 map |
 | **Alerts** | `/alerts` | Official + citizen reports, severity filter, expandable details, channel status |
 | **Safety Info** | `/safety` | Category nav, hazard guides (Before/During/After), emergency contacts |
 | **Emergency SOS** | `/sos` | Hold-to-activate, 3s countdown, GPS capture, CRITICAL incident, 112 call button |

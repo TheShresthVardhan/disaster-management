@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Card, CardBody, FormField, FormSection, StepIndicator, Badge } from '../components/ui';
 import { useIncidents } from '../context/IncidentContext';
@@ -10,6 +10,7 @@ const formSteps = [
   { id: 'severity', label: 'Severity', description: 'How serious?' },
   { id: 'location', label: 'Location', description: 'Where did it occur?' },
   { id: 'details', label: 'Details', description: 'What did you observe?' },
+  { id: 'ai', label: 'AI Analysis', description: 'Get AI assessment' },
   { id: 'contact', label: 'Contact', description: 'Optional follow-up' },
 ];
 
@@ -58,6 +59,8 @@ function parseCoordinates(coordString) {
   return { lat, lng };
 }
 
+const API_BASE = (import.meta.env.VITE_API_BASE || 'http://localhost:8000').replace(/\/$/, '');
+
 function ReportDisaster() {
   const { addIncident } = useIncidents();
   const [currentStep, setCurrentStep] = useState(0);
@@ -84,6 +87,11 @@ function ReportDisaster() {
   const [_uploadProgress, _setUploadProgress] = useState(0);
   const [isOnline, setIsOnline] = useState(() => navigator.onLine);
   const fileInputRef = useRef(null);
+
+  // AI Analysis state
+  const [aiAnalysis, setAiAnalysis] = useState(null);
+  const [aiAnalyzing, setAiAnalyzing] = useState(false);
+  const [aiError, setAiError] = useState(null);
 
   useEffect(() => {
     const updateOnlineStatus = () => setIsOnline(navigator.onLine);
@@ -180,6 +188,8 @@ function ReportDisaster() {
           newErrors.image = imageError;
         }
         break;
+      case 4: // AI Analysis step
+        break;
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -187,6 +197,10 @@ function ReportDisaster() {
 
   const handleNext = () => {
     if (validateStep(currentStep)) {
+      if (currentStep === 3) {
+        // When moving from details to AI analysis, run AI analysis
+        runAIAnalysis();
+      }
       setCurrentStep((prev) => Math.min(prev + 1, formSteps.length - 1));
     }
   };
@@ -214,6 +228,11 @@ function ReportDisaster() {
         description: formData.description,
         affectedPeople: Number(formData.affectedPeople) || 0,
       };
+
+      // Include AI analysis if available
+      if (aiAnalysis) {
+        incidentData.aiAssessment = aiAnalysis;
+      }
 
       const newIncident = addIncident(incidentData);
       let imageUrl = null;
@@ -245,6 +264,57 @@ function ReportDisaster() {
     } finally {
       setUploading(false);
       setUploadProgress(0);
+    }
+  };
+
+  const runAIAnalysis = async () => {
+    if (!formData.description.trim()) {
+      setAiError('Please provide a description before requesting AI analysis');
+      return;
+    }
+
+    setAiAnalyzing(true);
+    setAiError(null);
+    setAiAnalysis(null);
+
+    try {
+      const { lat, lng } = parseCoordinates(formData.coordinates);
+      
+      const requestData = {
+        disaster_type: formData.disasterType || undefined,
+        reported_severity: formData.severity || undefined,
+        description: formData.description,
+        latitude: formData.latitude ? parseFloat(formData.latitude) : (lat !== null ? lat : undefined),
+        longitude: formData.longitude ? parseFloat(formData.longitude) : (lng !== null ? lng : undefined),
+        location_text: formData.location,
+        affected_people: Number(formData.affectedPeople) || 0,
+        image_url: imagePreview || undefined,
+      };
+
+      const response = await fetch(`${API_BASE}/api/ai/analyze-incident`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail?.message || data.error || 'AI analysis failed');
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'AI analysis failed');
+      }
+
+      setAiAnalysis(data.result);
+      setAiError(null);
+    } catch (error) {
+      console.error('[ReportDisaster] AI analysis failed:', error);
+      setAiError(error.message || 'AI analysis failed. Please try again.');
+      setAiAnalysis(null);
+    } finally {
+      setAiAnalyzing(false);
     }
   };
 
@@ -328,9 +398,6 @@ function ReportDisaster() {
                       }}
                     >
                       Submit Another Report
-                    </Button>
-                    <Button variant="outline" size="lg" as={Link} to="/map">
-                      View on Map
                     </Button>
                     <Button variant="outline" size="lg" as={Link} to="/">
                       View Dashboard
@@ -645,8 +712,99 @@ function ReportDisaster() {
                     </FormSection>
                   )}
 
-                  {/* Step 4: Contact */}
+                  {/* Step 4: AI Analysis */}
                   {currentStep === 4 && (
+                    <FormSection title="AI Assessment" subtitle="Get AI-powered incident assessment">
+                      {aiAnalyzing && (
+                        <div className="text-center py-4">
+                          <div className="spinner-border text-primary mb-3" role="status">
+                            <span className="visually-hidden">Analyzing...</span>
+                          </div>
+                          <h5>Analyzing incident with AI...</h5>
+                          <p className="text-muted">This may take a few seconds</p>
+                        </div>
+                      )}
+                      
+                      {aiError && !aiAnalyzing && (
+                        <div className="alert alert-warning">
+                          <strong>AI Analysis Failed:</strong> {aiError}
+                          <Button variant="outline" size="sm" className="mt-2" onClick={runAIAnalysis}>
+                            Retry Analysis
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {aiAnalysis && (
+                        <div className="ai-results">
+                          <div className="ai-result-header d-flex justify-content-between align-items-center mb-3">
+                            <h5 className="mb-0">AI Assessment</h5>
+                            {aiAnalysis.is_demo && (
+                              <Badge variant="warning" className="p-2">
+                                ⚠️ DEMO MODE - Not a real AI prediction
+                              </Badge>
+                            )}
+                          </div>
+                          
+                          <div className="row g-3 mb-3">
+                            <div className="col-md-6">
+                              <strong>Predicted Disaster Type:</strong>
+                              <Badge severity={aiAnalysis.predicted_disaster_type} size="lg" className="ms-2" />
+                            </div>
+                            <div className="col-md-6">
+                              <strong>Predicted Severity:</strong>
+                              <Badge severity={aiAnalysis.predicted_severity} size="lg" className="ms-2" />
+                            </div>
+                            <div className="col-md-6">
+                              <strong>Confidence:</strong>
+                              <span className="ms-2 fw-medium">{aiAnalysis.confidence ? (aiAnalysis.confidence * 100).toFixed(0) + '%' : 'N/A'}</span>
+                            </div>
+                            <div className="col-md-6">
+                              <strong>Model:</strong>
+                              <span className="ms-2 text-muted">{aiAnalysis.model_version}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="mb-3">
+                            <strong>Infrastructure Impact:</strong>
+                            <p className="mt-1">{aiAnalysis.infrastructure_impact}</p>
+                          </div>
+                          
+                          <div className="mb-3">
+                            <strong>Safety Assessment:</strong>
+                            <p className="mt-1">{aiAnalysis.safety_assessment}</p>
+                          </div>
+                          
+                          {aiAnalysis.recommended_actions && aiAnalysis.recommended_actions.length > 0 && (
+                            <div>
+                              <strong>Recommended Actions:</strong>
+                              <ul className="mt-1 mb-0">
+                                {aiAnalysis.recommended_actions.map((action, i) => (
+                                  <li key={i}>{action}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          
+                          <div className="prototype-notice mt-3 p-2 small text-muted">
+                            {aiAnalysis.is_demo 
+                              ? 'This assessment was generated by a DEMO rule-based system. Not a trained ML model.' 
+                              : 'Generated by AI model v' + aiAnalysis.model_version}
+                            {aiAnalysis.is_demo && ' Confidence values are placeholder values, not real model certainty.'}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {aiAnalyzing && (
+                        <div className="text-center mt-3">
+                          <span className="spinner-border text-primary me-2" aria-hidden="true"></span>
+                          <span>Analyzing with AI...</span>
+                        </div>
+                      )}
+                    </FormSection>
+                  )}
+
+                  {/* Step 5: Contact */}
+                  {currentStep === 5 && (
                     <FormSection title="Contact Information" subtitle="Optional - for follow-up from emergency management">
                       <FormField
                         label="Phone or Email"

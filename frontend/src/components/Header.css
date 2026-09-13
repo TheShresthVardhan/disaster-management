@@ -11,9 +11,12 @@
   min-height: 64px;
 }
 
-.brand-icon {
-  font-size: 1.75rem;
-  line-height: 1;
+.brand-logo {
+  height: 38px;
+  width: auto;
+  object-fit: contain;
+  border-radius: 9px;
+  flex-shrink: 0;
 }
 
 .brand-text {
@@ -90,8 +93,9 @@
   .brand-text {
     font-size: 1.125rem;
   }
-  
-  .brand-icon {
-    font-size: 1.5rem;
+
+  .brand-logo {
+    height: 30px;
+    border-radius: 7px;
   }
 }

@@ -2,17 +2,27 @@
 Incident AI Package
 =================================================================
 Phase 5A Foundation - Incident AI for Disaster Intelligence System
-=================================================================
+Phase 6A Foundation - Landslide Risk Model Foundation
+=====================================================================================
 
-This package provides the foundation for AI-powered incident analysis.
-Current status: Phase 5A Foundation - DEMO provider only, no trained models.
+This package provides the foundation for AI-powered incident analysis
+and environmental landslide risk prediction.
 
-Architecture:
+Phase 5A - Incident AI Foundation:
 - schemas: Pydantic models for input/output contracts
 - models: Provider interface and implementations (demo, future: sklearn/torch/etc.)
 - preprocessing: Text and image preprocessing utilities
 - validation: Unit-testable validation functions
 - providers: Provider registry for dynamic model selection
+- config: Configuration management
+
+Phase 6A - Landslide Risk Model Foundation:
+- data: Data loading and synthetic data generation
+- models: Model implementations (RandomForest, Demo)
+- preprocessing: Feature preprocessing and encoding
+- training: Training pipeline with cross-validation
+- inference: Inference interface with predictor
+- validation: Input/output validation
 - config: Configuration management
 
 Supported Disaster Types:
@@ -21,8 +31,11 @@ Supported Disaster Types:
 Supported Severity Levels:
 - critical, high, moderate, low
 
+Landslide Risk Categories:
+- low, moderate, high, critical
+
 Current Implementation Status:
-- ✅ Schemas (IncidentInput, IncidentAIResult)
+- ✅ Schemas (IncidentInput, IncidentAIResult, LandslideInputFeatures, LandslideRiskResult)
 - ✅ Provider interface (IncidentAIProvider abstract base)
 - ✅ Demo provider (rule-based, clearly labeled as DEMO)
 - ✅ Text preprocessing utilities
@@ -30,7 +43,14 @@ Current Implementation Status:
 - ✅ Validation utilities (input, severity, disaster_type, schema, confidence)
 - ✅ Provider registry
 - ✅ Configuration management
-- ❌ Trained ML models (Phase 5B+)
+- ✅ Landslide data loading and synthetic data generation
+- ✅ Landslide feature preprocessing
+- ✅ Random Forest landslide model (trainable)
+- ✅ Demo landslide model (rule-based)
+- ✅ Training pipeline with cross-validation
+- ✅ Inference interface with predictor
+- ✅ Validation utilities for landslide features
+- ❌ Trained ML models with real data (requires dataset)
 - ❌ Image analysis models (Phase 5B+)
 - ❌ Forecasting/prediction (Phase 5C+)
 - ❌ Resource optimization (Phase 5D+)
@@ -49,6 +69,13 @@ Configuration:
     - AI_MIN_CONFIDENCE: Minimum confidence threshold (default: 0.3)
     - AI_MAX_TEXT_LENGTH: Max text length for analysis (default: 4000)
     - AI_LOG_LEVEL: Logging level (default: INFO)
+
+Landslide Configuration (see LandslideConfig in landslide/config.py):
+    - LANDSLIDE_MODEL_TYPE: Model type (default: "random_forest")
+    - LANDSLIDE_DEMO_MODE: Enable demo mode (default: true)
+    - LANDSLIDE_MODEL_PATH: Path to model file
+    - LANDSLIDE_DATA_DIR: Data directory
+    - LANDSLIDE_MODEL_DIR: Model output directory
 
 Testing:
     pytest backend/tests/ -v
@@ -133,18 +160,55 @@ from app.ai.config import (
     reset_config,
 )
 
+# Phase 6A - Landslide Risk Model
+from app.ai.landslide.config import (
+    LandslideConfig,
+    get_landslide_config,
+    reset_landslide_config,
+)
+from app.ai.landslide.schemas import (
+    LandslideInputFeatures,
+    LandslideRiskResult,
+    LandslideRiskCategory,
+    SoilType,
+    LandCover,
+    Geology,
+    LandslidePredictionBatchRequest,
+    LandslidePredictionBatchResponse,
+    LandslideTrainingData,
+)
+from app.ai.landslide.models import (
+    RandomForestLandslideModel,
+    DemoLandslideModel,
+    get_landslide_model,
+)
+from app.ai.landslide.preprocessing.processor import LandslidePreprocessor
+from app.ai.landslide.inference.predictor import LandslideRiskPredictor, create_predictor
+from app.ai.landslide.validation.validator import (
+    validate_landslide_input,
+    validate_landslide_risk_result,
+    get_risk_category_from_score,
+    validate_landslide_input,
+    validate_landslide_risk_result,
+    validate_environmental_features,
+    validate_coordinates,
+    validate_risk_category,
+    sanitize_input_features,
+    validate_feature_completeness,
+)
+
 __all__ = [
-    # Schemas
+    # Schemas (Phase 5A)
     "IncidentInput",
     "IncidentAIResult",
     "DisasterType",
     "SeverityLevel",
     "IncidentAIRequest",
     "IncidentAIResponse",
-    # Models
+    # Models (Phase 5A)
     "IncidentAIProvider",
     "DemoIncidentAIProvider",
-    # Preprocessing
+    # Preprocessing (Phase 5A)
     "clean_text",
     "extract_keywords",
     "normalize_severity_text",
@@ -155,7 +219,7 @@ __all__ = [
     "ImagePreprocessor",
     "MockImagePreprocessor",
     "get_image_preprocessor",
-    # Validation
+    # Validation (Phase 5A)
     "validate_incident_description",
     "validate_affected_people",
     "validate_coordinates",
@@ -196,4 +260,33 @@ __all__ = [
     "AIConfig",
     "get_config",
     "reset_config",
+    # Phase 6A - Landslide
+    "LandslideConfig",
+    "get_landslide_config",
+    "reset_landslide_config",
+    "LandslideInputFeatures",
+    "LandslideRiskResult",
+    "LandslideRiskCategory",
+    "SoilType",
+    "LandCover",
+    "Geology",
+    "LandslidePredictionBatchRequest",
+    "LandslidePredictionBatchResponse",
+    "LandslideTrainingData",
+    "RandomForestLandslideModel",
+    "DemoLandslideModel",
+    "get_landslide_model",
+    "LandslidePreprocessor",
+    "LandslideRiskPredictor",
+    "create_predictor",
+    "validate_landslide_input",
+    "validate_landslide_risk_result",
+    "get_risk_category_from_score",
+    "validate_landslide_input",
+    "validate_landslide_risk_result",
+    "validate_environmental_features",
+    "validate_coordinates",
+    "validate_risk_category",
+    "sanitize_input_features",
+    "validate_feature_completeness",
 ]

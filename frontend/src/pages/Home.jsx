@@ -46,7 +46,7 @@ function Home() {
                   <span>System Operational</span>
                 </div>
                 <h1 id="hero-title" className="hero-title">
-                  Disaster Intelligence Dashboard
+                  Disastell Dashboard
                 </h1>
                 <p className="hero-subtitle">
                   Real-time incident tracking, risk forecasting, and coordinated response guidance.
@@ -56,9 +56,7 @@ function Home() {
                   <Button variant="primary" size="lg" as={Link} to="/report" leftIcon="📝">
                     Report Incident
                   </Button>
-                  <Button variant="outline" size="lg" as={Link} to="/map" leftIcon="🗺️">
-                    View Incident Map
-                  </Button>
+                  
                   <Button variant="danger" size="lg" as={Link} to="/sos" leftIcon="🆘">
                     Emergency SOS
                   </Button>
@@ -119,19 +117,12 @@ function Home() {
                           </div>
                           <div className="incident-meta">
                             <span className="incident-updated">{incident.updated}</span>
-                            <Button variant="ghost" size="sm" as={Link} to={`/map?incident=${incident.id}`}>
-                              Details
-                            </Button>
                           </div>
-</div>
+                        </div>
                       ))
                     )}
                   </div>
-                  <div className="incident-footer">
-                    <Button variant="outline" size="sm" as={Link} to="/map" fullWidth>
-                      View All Incidents →
-                    </Button>
-                  </div>
+                  
                 </CardBody>
               </Card>
             </div>
@@ -220,21 +211,10 @@ function Home() {
             <div className="col-12 col-md-6 col-lg-3">
               <Card variant="outlined" hoverable className="h-100 capability-card">
                 <CardBody className="text-center p-4">
-                  <div className="capability-icon" aria-hidden="true">🗺️</div>
-                  <h3 className="capability-title">Incident Map</h3>
-                  <p className="capability-description">Real-time visualization of active incidents with severity layers, clustering, and detailed popups.</p>
-                  <Button variant="outline" size="sm" as={Link} to="/map">
-                    Explore Map
-                  </Button>
-                </CardBody>
-              </Card>
-            </div>
-            <div className="col-12 col-md-6 col-lg-3">
-              <Card variant="outlined" hoverable className="h-100 capability-card">
-                <CardBody className="text-center p-4">
                   <div className="capability-icon" aria-hidden="true">📝</div>
                   <h3 className="capability-title">Report Incident</h3>
-                  <p className="capability-description">Structured incident reporting with geolocation, media attachments, and automated validation workflows.</p>
+                  <p className="capability-description">Structured incident reporting with geolocation, media attachments, and automated validation workflows.
+                  </p>
                   <Button variant="outline" size="sm" as={Link} to="/report">
                     Submit Report
                   </Button>
@@ -246,7 +226,8 @@ function Home() {
                 <CardBody className="text-center p-4">
                   <div className="capability-icon" aria-hidden="true">🚨</div>
                   <h3 className="capability-title">Emergency Alerts</h3>
-                  <p className="capability-description">Multi-channel alert distribution with severity-based routing, acknowledgment tracking, and public feeds.</p>
+                  <p className="capability-description">Multi-channel alert distribution with severity-based routing, acknowledgment tracking, and public feeds.
+                  </p>
                   <Button variant="outline" size="sm" as={Link} to="/alerts">
                     View Alerts
                   </Button>
@@ -258,7 +239,8 @@ function Home() {
                 <CardBody className="text-center p-4">
                   <div className="capability-icon" aria-hidden="true">📚</div>
                   <h3 className="capability-title">Safety Guidelines</h3>
-                  <p className="capability-description">Hazard-specific protocols, evacuation routes, shelter locations, and preparedness checklists.</p>
+                  <p className="capability-description">Hazard-specific protocols, evacuation routes, shelter locations, and preparedness checklists.
+                  </p>
                   <Button variant="outline" size="sm" as={Link} to="/safety">
                     Browse Safety Info
                   </Button>
