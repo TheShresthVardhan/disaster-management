@@ -1,9 +1,10 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { 
-  fetchIncidents, 
-  createIncident, 
-  subscribeToIncidents, 
-  isFirestoreAvailable 
+import {
+  fetchIncidents,
+  createIncident,
+  subscribeToIncidents,
+  updateIncidentStatus as updateIncidentStatusInFirestore,
+  isFirestoreAvailable
 } from '../services/firestore';
 
 const IncidentContext = createContext(null);
@@ -94,11 +95,10 @@ export function IncidentProvider({ children }) {
     saveToLocalStorage(incidents);
   }, [incidents]);
 
-  // Firestore status update function - defined outside to avoid circular dependency
+  // Firestore status update - uses the static import (no dynamic import needed)
   const updateIncidentStatusFirestore = useCallback(async (incidentId, status) => {
     try {
-      const { updateIncidentStatus } = await import('../services/firestore');
-      await updateIncidentStatus(incidentId, status);
+      await updateIncidentStatusInFirestore(incidentId, status);
     } catch (error) {
       console.warn('[IncidentContext] Failed to sync status to Firestore:', error);
     }
