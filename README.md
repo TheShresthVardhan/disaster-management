@@ -40,7 +40,7 @@ disaster-management/
 │   ├── src/
 │   │   ├── components/       # Layout, Header, Footer + ui/ (Button, Card, Badge, FormField, StatsCard, EmptyState)
 │   │   ├── context/          # IncidentContext.jsx, ThemeContext.jsx
-│   │   ├── pages/            # Home.jsx, ReportDisaster.jsx, DisasterMap.jsx (preview), Resources.jsx (demo), Alerts.jsx, SafetyInfo.jsx, EmergencySOS.jsx (+ .css)
+│   │   ├── pages/            # Home.jsx, ReportDisaster.jsx, DisasterMap.jsx (Leaflet Sikkim map), Resources.jsx (demo), Alerts.jsx, SafetyInfo.jsx, EmergencySOS.jsx (+ .css)
 │   │   ├── services/         # firebase.js, firestore.js, storage.js, resourceOptimization.js (backend client + local fallback)
 │   │   ├── services/         # firebase.js, firestore.js, storage.js
 │   │   ├── App.jsx           # 5 routes under <Layout /> (see below)
@@ -147,13 +147,33 @@ Actual routes in `frontend/src/App.jsx` (all under `Layout`):
 |------|-------|--------------|
 | **Disastell Dashboard (Home)** | `/` | Active incidents, risk forecasts (static list), priority zones, stats cards, capabilities, coming-soon placeholders |
 | **Report Incident** | `/report` | 6-step wizard (type → severity → location → details → AI analysis → contact), GPS coords, image upload (5MB, JPEG/PNG/WebP/HEIC), offline queue |
-| **Disaster Map (Preview)** | `/map` | Simplified CSS preview plotting live incidents by severity; full interactive map (clustering, heat layers, live tracking) under **Future Updates** |
+| **Disaster Map — Sikkim** | `/map` | Leaflet + OpenStreetMap centered on Sikkim; live GPS markers with detail popups; severity filters (All/Critical/High/Medium/Low) |
 | **Resource Priority (Demo)** | `/resources` | Rule-based incident ranking + simulated allocation (severity, affected, type); editable demo inventory; **DEMO / SIMULATED** labeled |
 | **Alerts** | `/alerts` | Official + citizen reports, severity filter, expandable details, channel status |
 | **Safety Info** | `/safety` | Category nav, hazard guides (Before/During/After), emergency contacts |
 | **Emergency SOS** | `/sos` | Hold-to-activate, 3s countdown, GPS capture, CRITICAL incident, 112 call button |
 
-There is no `/map` route despite older docs mentioning one.
+## Disaster Map — Sikkim (`/map`)
+Leaflet + OpenStreetMap, CDN-loaded (no new npm dependency), centered on Sikkim (zoom 8, soft regional containment — no fabricated boundaries).
+
+### IMPLEMENTED
+- Sikkim-focused disaster incident map (OpenStreetMap tiles, attributed)
+- GPS-based incident markers from live `IncidentContext`/Firebase data (active incidents with stored lat/lng)
+- Severity styling: Critical (red) / High (orange) / Medium (blue) / Low (green)
+- Severity filtering: All / Critical / High / Medium / Low (client-side, with counts)
+- Incident detail popups: type, severity, location, affected people, status, timestamp
+- Auto-updates when incident data changes; responsive on desktop/tablet/mobile; list fallback if tiles can't load
+
+### DEMO
+- Prototype incident data (3 Sikkim seed incidents + locally reported ones — clearly labeled, not live feeds)
+
+### FUTURE
+- Expansion beyond Sikkim
+- Live government disaster feeds
+- Satellite/GIS data
+- Predictive risk layers
+- Advanced heatmaps
+- Real-time road/traffic information
 
 ## Key Features Implemented
 - **Theme Toggle**: Light/Dark mode with `localStorage` persistence, respects system preference (`ThemeContext`)
@@ -450,7 +470,7 @@ uvicorn app.main:app --reload
 - **No trained production models** — incident + landslide both default to demo/rule-based (`is_demo=True`, fixed 0.65 confidence)
 - **No image analysis models** — preprocessor interface + mock only
 - **No forecasting / temporal prediction** beyond static `riskForecast` list in `Home.jsx`
-- **No full interactive map yet** — `/map` preview plots live incidents; clustering / heat layers / live tracking are future updates
+- **Map extensions** — beyond-Sikkim expansion, live feeds, satellite/GIS, predictive layers, heatmaps, road/traffic info
 - **No push notifications / SMS / Email alerts**
 - **No Firebase Authentication** (rules are open development rules)
 - **No weather APIs integration**

@@ -26,7 +26,7 @@ src/
 ├── pages/                # Route pages
 │   ├── Home.jsx              # Dashboard (active incidents, forecasts, priorities)
 │   ├── ReportDisaster.jsx    # 5-step incident reporting + image upload
-│   ├── DisasterMap.jsx       # Map placeholder with filters
+│   ├── DisasterMap.jsx       # Leaflet + OSM Sikkim map, live markers, severity filters
 │   ├── Alerts.jsx            # Official + citizen alerts with filters
 │   ├── SafetyInfo.jsx        # Safety categories, hazard guides, contacts
 │   └── EmergencySOS.jsx      # Hold-to-activate SOS with GPS
