@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, Card, CardBody, FormField, FormSection, StepIndicator, Badge } from '../components/ui';
+import { Button, Card, CardBody, FormField, FormSection, StepIndicator, Badge, DemoNotice } from '../components/ui';
 import { useIncidents } from '../context/IncidentContext';
 import { uploadIncidentImage, isStorageAvailable } from '../services/storage';
 import './ReportDisaster.css';
@@ -113,6 +113,8 @@ function ReportDisaster() {
   const [uploading, setUploading] = useState(false);
   const [, setUploadProgress] = useState(0);
   const [isOnline, setIsOnline] = useState(() => navigator.onLine);
+  const [locating, setLocating] = useState(false);
+  const [locationMsg, setLocationMsg] = useState(null); // { type: 'success' | 'error', text }
   const fileInputRef = useRef(null);
 
   // AI Analysis state
@@ -155,6 +157,45 @@ function ReportDisaster() {
       longitude: loc.lng.toFixed(6),
       coordinates: `${loc.lat.toFixed(6)}, ${loc.lng.toFixed(6)}`,
     }));
+    setLocationMsg(null);
+  };
+
+  const useCurrentLocation = () => {
+    if (!('geolocation' in navigator)) {
+      setLocationMsg({ type: 'error', text: 'Geolocation is not supported by this browser. Enter coordinates manually.' });
+      return;
+    }
+    if (!window.isSecureContext) {
+      setLocationMsg({ type: 'error', text: 'Location needs a secure connection (HTTPS or localhost). Enter coordinates manually.' });
+      return;
+    }
+    setLocating(true);
+    setLocationMsg(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude.toFixed(6);
+        const lng = pos.coords.longitude.toFixed(6);
+        setFormData((prev) => ({
+          ...prev,
+          latitude: lat,
+          longitude: lng,
+          coordinates: `${lat}, ${lng}`,
+        }));
+        const accuracy = pos.coords.accuracy ? ` (±${Math.round(pos.coords.accuracy)} m)` : '';
+        setLocationMsg({ type: 'success', text: `Location captured: ${lat}, ${lng}${accuracy}.` });
+        setLocating(false);
+      },
+      (err) => {
+        const messages = {
+          1: 'Location permission denied. Allow access in browser settings, or enter coordinates manually.',
+          2: 'Location unavailable. GPS signal may be weak — try again or enter coordinates manually.',
+          3: 'Location request timed out. Try again or enter coordinates manually.',
+        };
+        setLocationMsg({ type: 'error', text: messages[err.code] || 'Could not get your location. Enter coordinates manually.' });
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+    );
   };
 
   const handleImageSelect = (e) => {
@@ -202,6 +243,18 @@ function ReportDisaster() {
         break;
       case 2:
         if (!formData.location.trim()) newErrors.location = 'Please enter a location';
+        if (formData.latitude !== '') {
+          const lat = parseFloat(formData.latitude);
+          if (isNaN(lat) || lat < 8.0 || lat > 38.0) {
+            newErrors.latitude = 'Latitude must be between 8.0 and 38.0 (India)';
+          }
+        }
+        if (formData.longitude !== '') {
+          const lng = parseFloat(formData.longitude);
+          if (isNaN(lng) || lng < 68.0 || lng > 98.0) {
+            newErrors.longitude = 'Longitude must be between 68.0 and 98.0 (India)';
+          }
+        }
         break;
       case 3:
         if (!formData.description.trim()) newErrors.description = 'Please describe what you observed';
@@ -440,6 +493,9 @@ function ReportDisaster() {
                         setImageFile(null);
                         setImagePreview(null);
                         setImageError(null);
+                        setAiAnalysis(null);
+                        setAiError(null);
+                        setLocationMsg(null);
                       }}
                     >
                       Submit Another Report
@@ -473,6 +529,7 @@ function ReportDisaster() {
                   </p>
                 </div>
               </div>
+              <DemoNotice text={<><strong>Reports stay in this demo.</strong> Incidents are stored in browser localStorage only — nothing is sent to authorities. For real emergencies call <strong>112</strong>.</>} />
               <StepIndicator steps={formSteps} currentStep={currentStep} />
             </header>
 
@@ -587,6 +644,7 @@ function ReportDisaster() {
                       <FormField
                         label="Latitude"
                         htmlFor="latitude"
+                        error={errors.latitude}
                         hint="Auto-filled from coordinates or GPS. Range: 8.0 to 38.0 (India)"
                       >
                         <input
@@ -606,6 +664,7 @@ function ReportDisaster() {
                       <FormField
                         label="Longitude"
                         htmlFor="longitude"
+                        error={errors.longitude}
                         hint="Auto-filled from coordinates or GPS. Range: 68.0 to 98.0 (India)"
                       >
                         <input
@@ -639,11 +698,26 @@ function ReportDisaster() {
                       </FormField>
 
                       <div className="location-actions">
-                        <Button variant="outline" size="sm" leftIcon="📍" disabled>
-                          Use Current Location
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          leftIcon="📍"
+                          onClick={useCurrentLocation}
+                          loading={locating}
+                          disabled={locating}
+                        >
+                          {locating ? 'Locating…' : 'Use Current Location'}
                         </Button>
-                        <span className="text-muted small">GPS access requires HTTPS and user permission</span>
+                        <span className="text-muted small">
+                          {locating ? 'Waiting for GPS…' : 'Uses your device GPS (HTTPS + permission required)'}
+                        </span>
                       </div>
+                      {locationMsg && (
+                        <div className={`location-msg location-msg-${locationMsg.type}`} role={locationMsg.type === 'error' ? 'alert' : 'status'}>
+                          <span aria-hidden="true">{locationMsg.type === 'error' ? '⚠' : '✅'}</span>
+                          <span>{locationMsg.text}</span>
+                        </div>
+                      )}
                     </FormSection>
                   )}
 
