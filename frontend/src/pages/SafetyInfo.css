@@ -108,6 +108,26 @@
   width: 100%;
 }
 
+/* Expandable step-by-step guideline inside a topic card */
+.topic-guide {
+  margin: 0.75rem 0 0;
+  padding: 0.875rem 0.875rem 0.875rem 2rem;
+  background-color: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--bs-body-color);
+}
+
+.topic-guide li {
+  margin-bottom: 0.375rem;
+}
+
+.topic-guide li:last-child {
+  margin-bottom: 0;
+}
+
 /* Hazard Guide */
 .hazard-guide {
   height: 100%;
