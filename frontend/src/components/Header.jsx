@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { Button } from '../components/ui';
-import LanguageSelector from './LanguageSelector';
 import { useTheme } from '../context/ThemeContext';
 import './Header.css';
 
@@ -57,7 +56,6 @@ function Header() {
               ))}
             </ul>
             <div className="d-flex align-items-center gap-2 ms-auto header-actions">
-              <LanguageSelector />
               {mounted && (
                 <Button
                   variant="ghost"

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import LanguageSelector from './LanguageSelector';
 import './Footer.css';
 
 function Footer() {
@@ -20,6 +21,9 @@ function Footer() {
               <Link to="/alerts" className="footer-link">Alert System</Link>
             </div>
           </div>
+        </div>
+        <div className="footer-language">
+          <LanguageSelector />
         </div>
         <div className="footer-tagline">
           AI-Powered Disaster Intelligence & Response
