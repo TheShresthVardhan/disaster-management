@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, Card, CardBody, FormField, FormSection, StepIndicator, Badge, DemoNotice } from '../components/ui';
+import { Button, Card, CardBody, FormField, FormSection, StepIndicator, Badge, DemoNotice, ErrorBoundary } from '../components/ui';
 import { useIncidents } from '../context/IncidentContext';
 import { uploadIncidentImage, isStorageAvailable } from '../services/storage';
 import './ReportDisaster.css';
@@ -542,6 +542,7 @@ function ReportDisaster() {
               <StepIndicator steps={formSteps} currentStep={currentStep} />
             </header>
 
+            <ErrorBoundary>
             <form onSubmit={handleSubmit} className="report-form" noValidate>
               <Card variant="elevated">
                 <CardBody className="p-4 p-md-5">
@@ -991,6 +992,7 @@ function ReportDisaster() {
                 </CardBody>
               </Card>
             </form>
+            </ErrorBoundary>
           </div>
         </div>
       </div>
