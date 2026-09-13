@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import ReportDisaster from './pages/ReportDisaster';
@@ -21,9 +21,21 @@ function App() {
           <Route path="alerts" element={<Alerts />} />
           <Route path="safety" element={<SafetyInfo />} />
           <Route path="sos" element={<EmergencySOS />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </BrowserRouter>
+  );
+}
+
+function NotFound() {
+  return (
+    <div className="container py-5 text-center">
+      <div style={{ fontSize: '3rem' }} aria-hidden="true">🧭</div>
+      <h1 className="h3 fw-bold mt-3">Page not found</h1>
+      <p className="text-muted">This demo has no page at that address.</p>
+      <Link className="btn btn-primary" to="/">Back to Dashboard</Link>
+    </div>
   );
 }
 

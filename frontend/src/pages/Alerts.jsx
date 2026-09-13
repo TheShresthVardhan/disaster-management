@@ -65,6 +65,23 @@ function Alerts() {
   const [filterSeverity, setFilterSeverity] = useState('all');
   const [expandedId, setExpandedId] = useState(null);
   const [activeTab, setActiveTab] = useState('active');
+  const [copiedId, setCopiedId] = useState(null);
+
+  const shareAlert = async (alert) => {
+    const text = `${alert.type} (${alert.severity}) — ${alert.area}\n${alert.description}\nRecommended: ${alert.action}`;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    setCopiedId(alert.id);
+    setTimeout(() => setCopiedId((id) => (id === alert.id ? null : id)), 2000);
+  };
 
   // Convert citizen incidents to alert format
   const citizenAlerts = useMemo(() => 
@@ -119,10 +136,10 @@ function Alerts() {
               </p>
             </div>
             <div className="d-flex gap-2">
-              <Button variant="outline" size="sm" leftIcon="🔔" disabled>
+              <Button variant="outline" size="sm" leftIcon="🔔" disabled title="Alert subscriptions arrive in a future update">
                 Subscribe
               </Button>
-              <Button variant="primary" size="sm" leftIcon="⚙️" disabled>
+              <Button variant="primary" size="sm" leftIcon="⚙️" disabled title="Channel settings arrive in a future update">
                 Channels
               </Button>
             </div>
@@ -176,6 +193,7 @@ function Alerts() {
             aria-selected={activeTab === 'history'}
             onClick={() => setActiveTab('history')}
             disabled
+            title="Alert history arrives in a future update"
           >
             History
           </Button>
@@ -245,8 +263,15 @@ function Alerts() {
                           >
                             {isExpanded ? 'Hide Details' : 'Show Details'}
                           </Button>
-                          <Button variant="ghost" size="sm" disabled>Share</Button>
-                          <Button variant="ghost" size="sm" disabled>Acknowledge</Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => shareAlert(alert)}
+                            title="Copy alert summary to clipboard"
+                          >
+                            {copiedId === alert.id ? 'Copied ✓' : 'Share'}
+                          </Button>
+                          <Button variant="ghost" size="sm" disabled title="Acknowledgement tracking arrives in a future update">Acknowledge</Button>
                         </div>
                       </div>
                       
@@ -310,7 +335,7 @@ function Alerts() {
                       </div>
                     ))}
                   </div>
-                  <Button variant="outline" size="sm" className="w-100 mt-3" disabled>
+                  <Button variant="outline" size="sm" className="w-100 mt-3" disabled title="Notification preferences arrive in a future update">
                     Manage Preferences
                   </Button>
                 </CardBody>

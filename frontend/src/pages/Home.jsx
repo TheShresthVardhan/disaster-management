@@ -265,14 +265,14 @@ function Home() {
           <div className="row g-4">
             <div className="col-12 col-md-4">
               <PlaceholderCard
-                title="AI Risk Analysis"
-                description="Predictive modeling for incident progression and resource optimization"
-                icon="🤖"
+                title="Live Data Feeds"
+                description="Official data streams feeding the dashboard, map, and alerts in real time"
+                icon="📡"
                 features={[
-                  'Incident trajectory prediction',
-                  'Resource allocation optimization',
-                  'Vulnerability assessment',
-                  'Automated situation reports',
+                  'Government disaster alert feeds',
+                  'Weather API integration',
+                  'Push notification delivery',
+                  'SMS and multi-channel alerts',
                 ]}
               />
             </div>

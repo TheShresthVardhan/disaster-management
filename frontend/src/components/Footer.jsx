@@ -14,6 +14,8 @@ function Footer() {
           </div>
           <div className="col-md-6">
             <div className="footer-links d-flex flex-wrap justify-content-md-end gap-3">
+              <Link to="/map" className="footer-link">Disaster Map</Link>
+              <Link to="/resources" className="footer-link">Resources</Link>
               <Link to="/safety" className="footer-link">Safety Guidelines</Link>
               <Link to="/alerts" className="footer-link">Alert System</Link>
             </div>
