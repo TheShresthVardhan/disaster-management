@@ -172,7 +172,7 @@ function DisasterMap() {
             <div>
               <h1 className="h2 fw-bold mb-1">Disaster Map — Sikkim</h1>
               <p className="text-muted mb-0">
-                Live incident markers across Sikkim from stored GPS coordinates.
+                Incident markers across Sikkim from stored GPS coordinates (auto-updates).
               </p>
             </div>
             <Badge variant="info" size="md" className="ms-auto">Sikkim Pilot</Badge>
