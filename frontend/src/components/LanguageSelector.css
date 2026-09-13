@@ -1,0 +1,47 @@
+.language-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 44px;
+}
+
+.language-globe {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* Google Translate gadget restyle to match the header */
+#google_translate_element .goog-te-gadget-simple {
+  border: 1px solid var(--bs-border-color) !important;
+  border-radius: 0.5rem;
+  padding: 0.375rem 0.5rem !important;
+  background-color: transparent !important;
+  font-size: 0.8125rem !important;
+  line-height: 1.2;
+}
+
+#google_translate_element .goog-te-gadget-simple .goog-te-menu-value {
+  color: var(--bs-body-color) !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+#google_translate_element .goog-te-gadget-simple .goog-te-menu-value span {
+  color: var(--bs-body-color) !important;
+  border: none !important;
+}
+
+/* Never let Google's top banner push the layout down */
+.goog-te-banner-frame,
+.goog-te-balloon-frame {
+  display: none !important;
+}
+
+body {
+  top: 0 !important;
+}
+
+.goog-te-gadget {
+  font-family: inherit !important;
+}
