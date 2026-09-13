@@ -531,20 +531,28 @@ service firebase.storage {
 - Auth, map clustering, notifications, weather APIs, admin dashboard, production deploy
 
 ## Project Status
-### IMPLEMENTED
-- Incident reporting (wizard, GPS, image upload, offline queue)
-- Emergency SOS (hold-to-activate, GPS, CRITICAL incident, 112 call)
-- Firebase persistence (Firestore sync) + Storage (images)
-- AI incident assessment (`POST /api/ai/analyze-incident`, demo provider)
-- Demo resource optimization (`POST /api/optimize-resources`, `/resources` page)
+### IMPLEMENTED (working)
+- Incident reporting (6-step wizard, GPS capture, image upload, offline queue, localStorage + Firestore sync)
+- Emergency SOS (hold-to-activate, GPS, CRITICAL incident, 112 call button, offline queue)
+- Firebase persistence (Firestore real-time sync with localStorage fallback) + Storage (validated image uploads)
+- AI incident assessment endpoint (`POST /api/ai/analyze-incident` via provider registry; rule-based demo provider only)
+- Sikkim disaster map (`/map`: Leaflet + OpenStreetMap, live GPS markers, severity filters, detail popups, offline list fallback)
+- Resource priority page (`/resources`: rule-based ranking + simulated allocation over live incidents)
+- Safety guidelines (step-by-step guides, landslide/cyclone phase checklists, tap-to-call India contacts)
+- Alerts (official samples + citizen reports, severity filter, share-copy, subscribe/acknowledge/history, local-only)
+- Multilingual UI (Google Translate selector: Hindi, Nepali, Bengali + more; Chrome bar suppressed)
+- DEMO / PROTOTYPE labeling on every page
 
-### DEMO (simulated — not real)
-- Resource availability (built-in inventory: ambulance ×4, rescue_team ×6, relief_kit ×50)
-- Allocation recommendations (transparent rule-based ranking, `is_demo: true`)
+### DEMO / SIMULATED (not real)
+- Seed incidents (3 Sikkim samples) and official alert samples
+- Home risk-forecast list (static sample figures, labeled as such)
+- Incident AI output (keyword rules, fixed 0.65 confidence, `is_demo: true` — never a trained model)
+- Resource availability (built-in inventory: ambulance ×4, rescue_team ×6, relief_kit ×50) and allocation recommendations
+- Subscriptions/acknowledgements (browser localStorage only; no messages sent)
 
-### FUTURE
-- Real-time government resource feeds
-- Live ambulance/rescue-team locations
-- Advanced optimization algorithms
-- Real-time traffic/route optimization
-- Multi-agency coordination
+### FUTURE SCOPE
+- Real-time government resource feeds; live ambulance/rescue-team locations
+- Advanced optimization algorithms; real-time traffic/route optimization; multi-agency coordination
+- Trained incident/landslide models on verified datasets; image analysis; confidence calibration
+- Expansion beyond Sikkim; live government disaster feeds; satellite/GIS data; predictive risk layers; heatmaps
+- Firebase Authentication + production security rules; push/SMS delivery; weather APIs; admin dashboard

@@ -134,8 +134,8 @@ function Home() {
             <div className="col-12 col-lg-4">
               <Card variant="elevated" hoverable className="h-100 key-question-card">
                 <CardHeader 
-                  title="What May Happen Next" 
-                  subtitle="Risk forecast based on current data"
+                  title="What May Happen Next"
+                  subtitle="Sample forecast (demo data — not a live feed)"
                   action={<Badge variant="warning" size="sm">{riskForecast.length} Forecasts</Badge>}
                 />
                 <CardBody>
