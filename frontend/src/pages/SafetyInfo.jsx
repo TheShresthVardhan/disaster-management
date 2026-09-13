@@ -580,22 +580,68 @@ function SafetyInfo() {
             <h2 id="contacts-title" className="h4 fw-bold mb-0">Emergency Contacts</h2>
             <Badge variant="info" size="sm">Quick Reference</Badge>
           </div>
+
+          {/* Prominent Call 112 banner — mirrors the Emergency SOS page */}
+          <div className="card border-danger call-112-banner mb-3">
+            <div className="card-body text-center">
+              <h3 className="h4 fw-bold text-danger mb-2 d-flex align-items-center justify-content-center gap-2">
+                <span aria-hidden="true">🚨</span>
+                Real Emergency — Call 112
+              </h3>
+              <p className="text-muted mb-3">
+                For any life-threatening emergency, call <strong>112</strong> immediately —
+                do not wait to file an incident report.
+              </p>
+              <a
+                href="tel:112"
+                className="btn btn-call-112 btn-lg px-5 d-inline-flex align-items-center gap-2 mb-2"
+                aria-label="Call Emergency Services 112"
+              >
+                <span aria-hidden="true">📞</span>
+                <span>Call 112 Now</span>
+              </a>
+              <p className="text-muted small mb-0">
+                Single number for Police, Fire, Medical & Disaster (India). Works on all mobile networks.
+              </p>
+            </div>
+          </div>
+
           <div className="row g-3">
             {[
-              { name: 'Emergency Services (India)', number: '112', type: 'Police, Fire, Medical & Disaster — single number', icon: '🚨' },
-              { name: 'Sikkim SDRF / Disaster Management', number: '112 / 03592-202-201', type: 'Sikkim State Emergency Operation Centre', icon: '🏔️' },
-              { name: 'NDMA / NDRF Helpline', number: '1078 / 011-26701700', type: 'National disaster helpline & control room', icon: '🏛️' },
-              { name: 'Ambulance / Medical', number: '102 / 108', type: 'Medical emergency & ambulance', icon: '🚑' },
-              { name: 'IMD Weather Alerts', number: 'mausam.imd.gov.in', type: 'Weather alerts & forecasts (India)', icon: '🌤️' },
+              { name: 'Emergency Services (India)', number: '112', type: 'Police, Fire, Medical & Disaster — single number', icon: '🚨', tel: 'tel:112', action: 'Call 112' },
+              { name: 'Sikkim SDRF / Disaster Management', number: '112 / 03592-202-201', type: 'Sikkim State Emergency Operation Centre', icon: '🏔️', tel: 'tel:112', action: 'Call 112' },
+              { name: 'NDMA / NDRF Helpline', number: '1078 / 011-26701700', type: 'National disaster helpline & control room', icon: '🏛️', tel: 'tel:1078', action: 'Call 1078' },
+              { name: 'Ambulance / Medical', number: '102 / 108', type: 'Medical emergency & ambulance', icon: '🚑', tel: 'tel:108', action: 'Call 108' },
+              { name: 'IMD Weather Alerts', number: 'mausam.imd.gov.in', type: 'Weather alerts & forecasts (India)', icon: '🌤️', href: 'https://mausam.imd.gov.in', action: 'Open IMD' },
               { name: 'Local DDMA', number: 'Check district directory', type: 'District emergency management (Sikkim)', icon: '📍' },
             ].map((contact) => (
               <div key={contact.name} className="col-12 col-md-6 col-lg-4">
                 <Card variant="outlined" hoverable className="h-100 contact-card">
-                  <CardBody className="text-center p-4">
+                  <CardBody className="text-center p-4 d-flex flex-column">
                     <span className="contact-icon" aria-hidden="true">{contact.icon}</span>
                     <h4 className="contact-name">{contact.name}</h4>
                     <p className="contact-number fw-bold text-primary mb-1">{contact.number}</p>
-                    <p className="contact-type text-muted small mb-0">{contact.type}</p>
+                    <p className="contact-type text-muted small mb-3">{contact.type}</p>
+                    {contact.tel && (
+                      <a
+                        href={contact.tel}
+                        className="btn btn-call-112 btn-sm w-100 mt-auto d-inline-flex align-items-center justify-content-center gap-2"
+                        aria-label={`${contact.action} — ${contact.name}`}
+                      >
+                        <span aria-hidden="true">📞</span>
+                        <span>{contact.action}</span>
+                      </a>
+                    )}
+                    {contact.href && (
+                      <a
+                        href={contact.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn btn-outline-primary btn-sm w-100 mt-auto"
+                      >
+                        {contact.action} ↗
+                      </a>
+                    )}
                   </CardBody>
                 </Card>
               </div>
